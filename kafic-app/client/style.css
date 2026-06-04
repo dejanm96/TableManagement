@@ -556,16 +556,26 @@ main {
 /* ─── SCROLLABLE LISTA IZNOSA ────────────────────────── */
 
 #session-info {
-  overflow-y: auto;
-  max-height: 180px;
+  display: flex;
+  flex-direction: column;
   flex-shrink: 1;
-}
-
-#session-form {
-  flex-shrink: 0;
+  overflow: hidden;
 }
 
 #session-items-list {
   overflow-y: auto;
-  max-height: 140px;
+  max-height: 220px;
+  flex-grow: 1;
+}
+
+.session-total-row {
+  flex-shrink: 0;
+  margin-top: 8px;
+  font-size: 1rem;
+  border-top: 1px solid #0f3460;
+  padding-top: 8px;
+}
+
+#session-form {
+  flex-shrink: 0;
 }
