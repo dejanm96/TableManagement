@@ -86,8 +86,8 @@ main {
 }
 
 #table-area {
-  width: 2000px;
-  height: 1200px;
+  width: 100%;
+  height: 100%;
   position: relative;
 }
 
