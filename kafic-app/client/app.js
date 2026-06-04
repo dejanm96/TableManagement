@@ -93,6 +93,29 @@ async function init() {
   await loadTables();
   setupEventListeners();
   startClock();
+  startTableTimers();
+}
+
+// ─── TIMER ZA STOLOVE ─────────────────────────────────
+
+function startTableTimers() {
+  function updateTimers() {
+    document.querySelectorAll('.table-time[data-opened]').forEach(el => {
+      const opened = new Date(el.dataset.opened);
+      const now = new Date();
+      const diff = Math.floor((now - opened) / 1000);
+      const h = Math.floor(diff / 3600);
+      const m = Math.floor((diff % 3600) / 60);
+      const s = diff % 60;
+      if (h > 0) {
+        el.textContent = `⏱ ${h}h ${String(m).padStart(2, '0')}m`;
+      } else {
+        el.textContent = `⏱ ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      }
+    });
+  }
+  updateTimers();
+  setInterval(updateTimers, 1000);
 }
 
 // ─── UČITAJ STOLOVE ───────────────────────────────────
@@ -131,9 +154,10 @@ function renderTable(table, session) {
     <button class="table-delete-btn" data-id="${table.id}">✕</button>
     <div class="table-icon">🪑</div>
     <div class="table-name">${table.name}</div>
-    ${session ? `
+${session ? `
       <div class="table-guest">${session.guest_name}</div>
       <div class="table-amount">${session.total_amount.toFixed(2)} KM</div>
+      <div class="table-time" data-opened="${session.opened_at}">⏱ --:--</div>
     ` : '<div class="table-guest">Slobodan</div>'}
   `;
 
@@ -277,6 +301,10 @@ async function openSessionModal(table, session) {
     sessionInfo.classList.remove('hidden');
     document.getElementById('session-guest').textContent = session.guest_name;
     document.getElementById('session-total').textContent = session.total_amount.toFixed(2);
+    const opened = new Date(session.opened_at);
+const h = opened.getHours().toString().padStart(2, '0');
+const m = opened.getMinutes().toString().padStart(2, '0');
+document.getElementById('session-opened').textContent = `${h}:${m}`;
     guestInput.style.display = 'none';
     closeBtn.classList.remove('hidden');
     const itemsList = document.getElementById('session-items-list');
@@ -412,8 +440,8 @@ async function openTodayReport() {
     content.innerHTML = `
       ${sessions.map(s => `
         <div class="report-row">
-          <span>${s.table_name} — ${s.guest_name}</span>
-          <span>${s.total_amount.toFixed(2)} KM</span>
+        <span>${s.table_name} — ${s.guest_name} <span style="color:#aaa;font-size:0.85rem;">(${s.opened_at ? new Date(s.opened_at).toLocaleTimeString('bs', {hour:'2-digit', minute:'2-digit'}) : ''} - ${s.closed_at ? new Date(s.closed_at).toLocaleTimeString('bs', {hour:'2-digit', minute:'2-digit'}) : ''})</span></span>
+        <span>${s.total_amount.toFixed(2)} KM</span>
         </div>
       `).join('')}
       <div class="report-total">

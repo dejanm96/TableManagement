@@ -635,3 +635,9 @@ main {
   gap: 10px;
   width: 100%;
 }
+
+.table-time {
+  font-size: 0.6rem;
+  color: #f9c74f;
+  margin-top: 2px;
+}
