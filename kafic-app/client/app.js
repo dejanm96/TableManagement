@@ -313,7 +313,7 @@ async function openTodayReport() {
   document.getElementById('modal-report').classList.remove('hidden');
 }
 
-// ─── HISTORIJA ────────────────────────────────────────
+// ─── ISTORIJA ────────────────────────────────────────
 
 async function openHistory() {
   const res = await fetch(`${API}/reports`);
@@ -322,7 +322,7 @@ async function openHistory() {
   const content = document.getElementById('history-content');
 
   if (reports.length === 0) {
-    content.innerHTML = '<p style="color:#aaa;text-align:center;padding:20px;">Nema historije.</p>';
+    content.innerHTML = '<p style="color:#aaa;text-align:center;padding:20px;">Nema istorije.</p>';
   } else {
     content.innerHTML = reports.map(r => `
       <div class="history-item">
