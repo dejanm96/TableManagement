@@ -376,13 +376,13 @@ main {
 #sank {
   position: absolute;
   top: 0;
-  left: 5%;
-  width: 55%;
-  height: 50px;
+  left: 32%;
+  width: 33%;
+  height: 90px;
   background: rgba(233, 69, 96, 0.15);
   border: 2px solid rgba(233, 69, 96, 0.4);
   border-top: none;
-  border-radius: 0 0 16px 16px;
+  border-radius: 0 0 12px 12px;
   display: flex;
   align-items: center;
   justify-content: center;
