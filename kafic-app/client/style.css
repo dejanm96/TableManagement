@@ -567,7 +567,7 @@ main {
   flex-direction: column;
   flex-shrink: 1;
   overflow: hidden;
-  min-height: 170px;
+  min-height: 140px;
 }
 
 .session-total-row {

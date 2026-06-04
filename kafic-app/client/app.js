@@ -268,9 +268,8 @@ async function openSessionModal(table, session) {
     sessionInfo.classList.remove('hidden');
     document.getElementById('session-guest').textContent = session.guest_name;
     document.getElementById('session-total').textContent = session.total_amount.toFixed(2);
-    guestInput.closest('#session-form').querySelector('#input-guest').style.display = 'none';
+    guestInput.style.display = 'none';
     closeBtn.classList.remove('hidden');
-
     const itemsList = document.getElementById('session-items-list');
     itemsList.innerHTML = session.items.map(item => `
       <div class="session-item" id="item-${item.id}">
@@ -281,13 +280,12 @@ async function openSessionModal(table, session) {
   } else {
     document.getElementById('modal-title').textContent = table.name;
     sessionInfo.classList.add('hidden');
-    guestInput.style.display = '';
+    guestInput.style.display = 'block';
     guestInput.value = '';
     guestInput.disabled = false;
     closeBtn.classList.add('hidden');
     document.getElementById('session-items-list').innerHTML = '';
   }
-
   document.getElementById('modal-session').classList.remove('hidden');
 }
 
