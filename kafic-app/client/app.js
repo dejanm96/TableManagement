@@ -300,7 +300,10 @@ async function deleteItem(itemId, sessionId) {
 // ─── DODAJ IZNOS ──────────────────────────────────────
 
 async function addAmount() {
-  const guestName = document.getElementById('input-guest').value.trim();
+  const guestInput = document.getElementById('input-guest');
+  const guestName = guestInput.style.display === 'none' 
+    ? document.getElementById('session-guest').textContent 
+    : guestInput.value.trim();
   const amount = parseFloat(amountValue);
 
   if (!guestName) return alert('Unesi ime gosta!');
