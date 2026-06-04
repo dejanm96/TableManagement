@@ -16,8 +16,8 @@ let amountValue = '';
 
 let pinValue = '';
 
-function setupPin() {
-  loadPin();
+async function setupPin() {
+  await loadPin();
   const btns = document.querySelectorAll('.pin-btn[data-val]');
   btns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -662,5 +662,5 @@ function checkChangePinProgress() {
 
 // ─── START ────────────────────────────────────────────
 
-setupPin();
+setupPin().then(() => startClock());
 startClock();
