@@ -150,11 +150,12 @@ function renderTable(table, session) {
   card.style.left = `${table.pos_x}px`;
   card.style.top = `${table.pos_y}px`;
 
-  card.innerHTML = `
+card.innerHTML = `
     <button class="table-delete-btn" data-id="${table.id}">✕</button>
+    <button class="table-edit-btn" data-id="${table.id}">✏️</button>
     <div class="table-icon">🪑</div>
     <div class="table-name">${table.name}</div>
-${session ? `
+    ${session ? `
       <div class="table-guest">${session.guest_name}</div>
       <div class="table-amount">${session.total_amount.toFixed(2)} KM</div>
       <div class="table-time" data-opened="${session.opened_at}">⏱ --:--</div>
@@ -174,6 +175,18 @@ ${session ? `
       await loadTables();
     }
   });
+
+  card.querySelector('.table-edit-btn').addEventListener('click', async (e) => {
+  e.stopPropagation();
+  const newName = prompt(`Novo ime za "${table.name}":`, table.name);
+  if (!newName || newName.trim() === '') return;
+  await fetch(`${API}/tables/${table.id}/rename`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: newName.trim() })
+  });
+  await loadTables();
+});
 
   makeDraggable(card, table);
   area.appendChild(card);

@@ -58,6 +58,13 @@ app.patch('/api/tables/:id/position', (req, res) => {
   res.json({ ok: true });
 });
 
+// Preimenuj sto
+app.patch('/api/tables/:id/rename', (req, res) => {
+  const { name } = req.body;
+  db.prepare('UPDATE tables SET name = ? WHERE id = ?').run(name, req.params.id);
+  res.json({ ok: true });
+});
+
 // ─── SESIJE (aktivni stolovi) ────────────────────────────
 
 // Dohvati aktivnu sesiju za sto
