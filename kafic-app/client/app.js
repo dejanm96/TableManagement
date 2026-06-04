@@ -101,7 +101,7 @@ async function init() {
 function startTableTimers() {
   function updateTimers() {
     document.querySelectorAll('.table-time[data-opened]').forEach(el => {
-      const opened = new Date(el.dataset.opened);
+      const opened = new Date(el.dataset.opened + 'Z');
       const now = new Date();
       const diff = Math.floor((now - opened) / 1000);
       const h = Math.floor(diff / 3600);
@@ -301,10 +301,10 @@ async function openSessionModal(table, session) {
     sessionInfo.classList.remove('hidden');
     document.getElementById('session-guest').textContent = session.guest_name;
     document.getElementById('session-total').textContent = session.total_amount.toFixed(2);
-    const opened = new Date(session.opened_at);
-const h = opened.getHours().toString().padStart(2, '0');
-const m = opened.getMinutes().toString().padStart(2, '0');
-document.getElementById('session-opened').textContent = `${h}:${m}`;
+    const opened = new Date(session.opened_at + 'Z');
+    const h = opened.getHours().toString().padStart(2, '0');
+    const m = opened.getMinutes().toString().padStart(2, '0');
+    document.getElementById('session-opened').textContent = `${h}:${m}`;
     guestInput.style.display = 'none';
     closeBtn.classList.remove('hidden');
     const itemsList = document.getElementById('session-items-list');
@@ -440,7 +440,7 @@ async function openTodayReport() {
     content.innerHTML = `
       ${sessions.map(s => `
         <div class="report-row">
-        <span>${s.table_name} — ${s.guest_name} <span style="color:#aaa;font-size:0.85rem;">(${s.opened_at ? new Date(s.opened_at).toLocaleTimeString('bs', {hour:'2-digit', minute:'2-digit'}) : ''} - ${s.closed_at ? new Date(s.closed_at).toLocaleTimeString('bs', {hour:'2-digit', minute:'2-digit'}) : ''})</span></span>
+        <span>${s.table_name} — ${s.guest_name} <span style="color:#aaa;font-size:0.85rem;">(${s.opened_at ? new Date(s.opened_at + 'Z').toLocaleTimeString('bs', {hour:'2-digit', minute:'2-digit'}) : ''} - ${s.closed_at ? new Date(s.closed_at + 'Z').toLocaleTimeString('bs', {hour:'2-digit', minute:'2-digit'}) : ''})</span></span>
         <span>${s.total_amount.toFixed(2)} KM</span>
         </div>
       `).join('')}
