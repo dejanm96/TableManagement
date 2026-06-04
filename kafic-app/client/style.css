@@ -104,8 +104,8 @@ main {
 
 #area-label-inside {
   position: absolute;
-  left: 10px;
-  top: 54px;
+  left: 25px;
+  top: 10px;
   color: rgba(255,255,255,0.2);
   font-size: 0.85rem;
   font-weight: 600;
