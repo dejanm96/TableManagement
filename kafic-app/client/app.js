@@ -18,6 +18,8 @@ let pinValue = '';
 
 async function setupPin() {
   await loadPin();
+  startClock();
+
   const btns = document.querySelectorAll('.pin-btn[data-val]');
   btns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -27,6 +29,14 @@ async function setupPin() {
       if (pinValue.length === 4) checkPin();
     });
   });
+
+  document.getElementById('pin-clear').addEventListener('click', () => {
+    pinValue = pinValue.slice(0, -1);
+    updatePinDots();
+  });
+
+  document.getElementById('pin-submit').addEventListener('click', checkPin);
+}
 
   document.getElementById('pin-clear').addEventListener('click', () => {
     pinValue = pinValue.slice(0, -1);
@@ -670,6 +680,4 @@ async function checkChangePinProgress() {
 }
 
 // ─── START ────────────────────────────────────────────
-
-setupPin().then(() => startClock());
-startClock();
+setupPin();
