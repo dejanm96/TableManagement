@@ -374,6 +374,7 @@ function closeModal(id) {
 // ─── EVENT LISTENERS ──────────────────────────────────
 
 function setupEventListeners() {
+  setupTouchScroll();
   document.getElementById('btn-edit-mode').addEventListener('click', toggleEditMode);
   document.getElementById('btn-add-table').addEventListener('click', () => {
     document.getElementById('modal-add-table').classList.remove('hidden');
@@ -397,6 +398,39 @@ document.getElementById('btn-export-pdf').addEventListener('click', async () => 
   document.getElementById('btn-close-history').addEventListener('click', () => closeModal('modal-history'));
 }
 
+
+// ─── TOUCH SCROLL ─────────────────────────────────────
+
+function setupTouchScroll() {
+  const area = document.getElementById('table-area');
+  const main = document.querySelector('main');
+  let startX, startY, scrollLeft, scrollTop;
+  let isDragging = false;
+
+  main.addEventListener('touchstart', (e) => {
+    if (editMode) return;
+    // Provjeri da li je klik na sto
+    if (e.target.closest('.table-card')) return;
+    isDragging = true;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    scrollLeft = main.scrollLeft;
+    scrollTop = main.scrollTop;
+  }, { passive: true });
+
+  main.addEventListener('touchmove', (e) => {
+    if (!isDragging) return;
+    if (e.target.closest('.table-card')) return;
+    const dx = startX - e.touches[0].clientX;
+    const dy = startY - e.touches[0].clientY;
+    main.scrollLeft = scrollLeft + dx;
+    main.scrollTop = scrollTop + dy;
+  }, { passive: true });
+
+  main.addEventListener('touchend', () => {
+    isDragging = false;
+  });
+}
 // ─── START ────────────────────────────────────────────
 
 init();
