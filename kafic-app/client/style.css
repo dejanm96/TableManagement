@@ -555,17 +555,19 @@ main {
 
 /* ─── SCROLLABLE LISTA IZNOSA ────────────────────────── */
 
+#session-items-list {
+  overflow-y: auto;
+  min-height: 150px;
+  max-height: 400px;
+  flex-grow: 1;
+}
+
 #session-info {
   display: flex;
   flex-direction: column;
   flex-shrink: 1;
   overflow: hidden;
-}
-
-#session-items-list {
-  overflow-y: auto;
-  max-height: 220px;
-  flex-grow: 1;
+  min-height: 220px;
 }
 
 .session-total-row {
