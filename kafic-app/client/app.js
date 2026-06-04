@@ -259,19 +259,16 @@ async function openSessionModal(table, session) {
   amountValue = '';
   updateAmountDisplay();
 
-  document.getElementById('modal-title').textContent = table.name;
-  document.getElementById('modal-session').classList.remove('hidden');
-
   const guestInput = document.getElementById('input-guest');
   const sessionInfo = document.getElementById('session-info');
   const closeBtn = document.getElementById('btn-close-session');
 
   if (session) {
+    document.getElementById('modal-title').textContent = `${table.name} — ${session.guest_name}`;
     sessionInfo.classList.remove('hidden');
     document.getElementById('session-guest').textContent = session.guest_name;
     document.getElementById('session-total').textContent = session.total_amount.toFixed(2);
-    guestInput.value = session.guest_name;
-    guestInput.disabled = true;
+    guestInput.closest('#session-form').querySelector('#input-guest').style.display = 'none';
     closeBtn.classList.remove('hidden');
 
     const itemsList = document.getElementById('session-items-list');
@@ -282,12 +279,16 @@ async function openSessionModal(table, session) {
       </div>
     `).join('');
   } else {
+    document.getElementById('modal-title').textContent = table.name;
     sessionInfo.classList.add('hidden');
+    guestInput.style.display = '';
     guestInput.value = '';
     guestInput.disabled = false;
     closeBtn.classList.add('hidden');
     document.getElementById('session-items-list').innerHTML = '';
   }
+
+  document.getElementById('modal-session').classList.remove('hidden');
 }
 
 async function deleteItem(itemId, sessionId) {
