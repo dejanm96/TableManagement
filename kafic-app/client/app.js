@@ -218,22 +218,30 @@ function makeDraggable(card, table) {
 
 function setupNumpad() {
   document.querySelectorAll('.num-btn[data-val]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    newBtn.addEventListener('click', () => {
       if (amountValue.length >= 8) return;
-      if (btn.dataset.val === '0' && amountValue === '') return;
-      amountValue += btn.dataset.val;
+      if (newBtn.dataset.val === '0' && amountValue === '') return;
+      amountValue += newBtn.dataset.val;
       updateAmountDisplay();
     });
   });
 
-  document.getElementById('num-dot').addEventListener('click', () => {
+  const dotBtn = document.getElementById('num-dot');
+  const newDot = dotBtn.cloneNode(true);
+  dotBtn.parentNode.replaceChild(newDot, dotBtn);
+  newDot.addEventListener('click', () => {
     if (amountValue.includes('.')) return;
     if (amountValue === '') amountValue = '0';
     amountValue += '.';
     updateAmountDisplay();
   });
 
-  document.getElementById('num-clear').addEventListener('click', () => {
+  const clearBtn = document.getElementById('num-clear');
+  const newClear = clearBtn.cloneNode(true);
+  clearBtn.parentNode.replaceChild(newClear, clearBtn);
+  newClear.addEventListener('click', () => {
     amountValue = amountValue.slice(0, -1);
     updateAmountDisplay();
   });
