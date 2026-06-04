@@ -252,11 +252,11 @@ main {
   width: 380px;
   max-width: 95vw;
   max-height: 90vh;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 14px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  overflow: hidden;
 }
 
 .modal-box h2 {
@@ -551,4 +551,21 @@ main {
 
 #num-dot {
   background: #1a3a6e;
+}
+
+/* ─── SCROLLABLE LISTA IZNOSA ────────────────────────── */
+
+#session-info {
+  overflow-y: auto;
+  max-height: 180px;
+  flex-shrink: 1;
+}
+
+#session-form {
+  flex-shrink: 0;
+}
+
+#session-items-list {
+  overflow-y: auto;
+  max-height: 140px;
 }
