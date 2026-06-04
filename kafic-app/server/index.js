@@ -179,6 +179,24 @@ app.get('/api/reports/:date', (req, res) => {
   res.json(sessions);
 });
 
+// Dohvati PIN
+app.get('/api/pin', (req, res) => {
+  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('pin');
+  res.json({ pin: row ? row.value : '1234' });
+});
+
+// Promijeni PIN
+app.post('/api/pin', (req, res) => {
+  const { pin } = req.body;
+  const existing = db.prepare('SELECT * FROM settings WHERE key = ?').get('pin');
+  if (existing) {
+    db.prepare('UPDATE settings SET value = ? WHERE key = ?').run(pin, 'pin');
+  } else {
+    db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run('pin', pin);
+  }
+  res.json({ ok: true });
+});
+
 // ─── START ───────────────────────────────────────────────
 
 app.listen(PORT, () => {

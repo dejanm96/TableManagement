@@ -37,18 +37,23 @@
     </div>
   </div>
 
-  <!-- HEADER -->
-  <header class="hidden">
-    <h1>☕ Tropico Manager</h1>
-    <div id="header-clock">00:00:00</div>
-    <div class="header-actions">
-      <button id="btn-today-report" class="btn-secondary">📊 Dnevni izvještaj</button>
-      <button id="btn-history" class="btn-secondary">📁 Istorija</button>
-      <button id="btn-fullscreen" class="btn-secondary">⛶ Fullscreen</button>
-      <button id="btn-edit-mode" class="btn-warning">✏️ Uredi raspored</button>
-      <button id="btn-logout" class="btn-secondary">🔒 Odjava</button>
+<header class="hidden">
+  <h1>☕ Tropico Manager</h1>
+  <div id="header-clock">00:00:00</div>
+  <div class="header-actions">
+    <button id="btn-fullscreen" class="btn-secondary">⛶ Fullscreen</button>
+    <div id="dropdown-wrapper">
+      <button id="btn-menu" class="btn-secondary">⚙️ ▾</button>
+      <div id="dropdown-menu" class="hidden">
+        <button id="btn-today-report">📊 Dnevni izvještaj</button>
+        <button id="btn-history">📁 Istorija</button>
+        <button id="btn-edit-mode">✏️ Uredi raspored</button>
+        <button id="btn-change-pin">🔑 Promijeni PIN</button>
+        <button id="btn-logout">🔒 Odjava</button>
+      </div>
     </div>
-  </header>
+  </div>
+</header>
 
   <!-- GLAVNA POVRŠINA SA STOLOVIMA -->
   <main class="hidden">
@@ -131,6 +136,45 @@
       </div>
     </div>
   </div>
+
+  <!-- MODAL: Promijeni PIN -->
+<div id="modal-change-pin" class="modal hidden">
+  <div class="modal-box">
+    <h2>🔑 Promijeni PIN</h2>
+    <p style="color:#aaa;font-size:0.9rem;">Unesite trenutni PIN</p>
+    <div id="change-pin-dots-old" class="pin-dots-row">
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+    </div>
+    <p style="color:#aaa;font-size:0.9rem;">Unesite novi PIN</p>
+    <div id="change-pin-dots-new" class="pin-dots-row">
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+    </div>
+    <div id="change-pin-error" style="color:#e94560;font-size:0.85rem;height:16px;"></div>
+    <div id="change-pin-numpad" class="pin-numpad-grid">
+      <button class="pin-btn" data-val="1">1</button>
+      <button class="pin-btn" data-val="2">2</button>
+      <button class="pin-btn" data-val="3">3</button>
+      <button class="pin-btn" data-val="4">4</button>
+      <button class="pin-btn" data-val="5">5</button>
+      <button class="pin-btn" data-val="6">6</button>
+      <button class="pin-btn" data-val="7">7</button>
+      <button class="pin-btn" data-val="8">8</button>
+      <button class="pin-btn" data-val="9">9</button>
+      <button class="pin-btn" id="change-pin-clear">⌫</button>
+      <button class="pin-btn" data-val="0">0</button>
+      <button class="pin-btn" id="change-pin-submit">✓</button>
+    </div>
+    <div class="modal-actions">
+      <button id="btn-cancel-change-pin" class="btn-secondary">Odustani</button>
+    </div>
+  </div>
+</div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="app.js"></script>

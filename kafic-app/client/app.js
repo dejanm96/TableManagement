@@ -1,5 +1,11 @@
 const API = '/api';
-const CORRECT_PIN = '2013'; // Promijeni na željeni PIN
+let CORRECT_PIN = '2013';
+
+async function loadPin() {
+  const res = await fetch(`${API}/pin`);
+  const data = await res.json();
+  CORRECT_PIN = data.pin;
+}
 
 let tables = [];
 let editMode = false;
@@ -11,6 +17,7 @@ let amountValue = '';
 let pinValue = '';
 
 function setupPin() {
+  loadPin();
   const btns = document.querySelectorAll('.pin-btn[data-val]');
   btns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -510,25 +517,56 @@ function closeModal(id) {
 function setupEventListeners() {
   setupNumpad();
   setupTouchScroll();
-  document.getElementById('btn-edit-mode').addEventListener('click', toggleEditMode);
+
+  // Dropdown
+  document.getElementById('btn-menu').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('dropdown-menu').classList.toggle('hidden');
+  });
+  document.addEventListener('click', () => {
+    document.getElementById('dropdown-menu').classList.add('hidden');
+  });
+
+  // Fullscreen
   document.getElementById('btn-fullscreen').addEventListener('click', toggleFullscreen);
+
+  // Odjava
   document.getElementById('btn-logout').addEventListener('click', () => {
+    document.getElementById('dropdown-menu').classList.add('hidden');
     document.getElementById('pin-screen').style.display = 'flex';
     document.querySelector('header').classList.add('hidden');
     document.querySelector('main').classList.add('hidden');
     pinValue = '';
     updatePinDots();
   });
+
+  // Edit mode
+  document.getElementById('btn-edit-mode').addEventListener('click', () => {
+    document.getElementById('dropdown-menu').classList.add('hidden');
+    toggleEditMode();
+  });
+
+  // Dodaj sto
   document.getElementById('btn-add-table').addEventListener('click', () => {
     document.getElementById('modal-add-table').classList.remove('hidden');
   });
   document.getElementById('btn-confirm-add-table').addEventListener('click', confirmAddTable);
   document.getElementById('btn-cancel-add-table').addEventListener('click', () => closeModal('modal-add-table'));
+
+  // Session modal
   document.getElementById('btn-add-amount').addEventListener('click', addAmount);
   document.getElementById('btn-close-session').addEventListener('click', closeSession);
   document.getElementById('btn-cancel').addEventListener('click', () => closeModal('modal-session'));
-  document.getElementById('btn-today-report').addEventListener('click', openTodayReport);
-  document.getElementById('btn-history').addEventListener('click', openHistory);
+
+  // Izvještaj
+  document.getElementById('btn-today-report').addEventListener('click', () => {
+    document.getElementById('dropdown-menu').classList.add('hidden');
+    openTodayReport();
+  });
+  document.getElementById('btn-history').addEventListener('click', () => {
+    document.getElementById('dropdown-menu').classList.add('hidden');
+    openHistory();
+  });
   document.getElementById('btn-export-pdf').addEventListener('click', async () => {
     const today = new Date().toISOString().split('T')[0];
     const reportRes = await fetch(`${API}/reports`);
@@ -539,6 +577,87 @@ function setupEventListeners() {
   });
   document.getElementById('btn-close-report').addEventListener('click', () => closeModal('modal-report'));
   document.getElementById('btn-close-history').addEventListener('click', () => closeModal('modal-history'));
+
+  // Promjena PIN-a
+  document.getElementById('btn-change-pin').addEventListener('click', () => {
+    document.getElementById('dropdown-menu').classList.add('hidden');
+    openChangePinModal();
+  });
+  document.getElementById('btn-cancel-change-pin').addEventListener('click', () => closeModal('modal-change-pin'));
+}
+
+// ─── PROMJENA PIN-a ───────────────────────────────────
+
+let changePinOld = '';
+let changePinNew = '';
+let changePinStep = 'old'; // 'old' ili 'new'
+
+function openChangePinModal() {
+  changePinOld = '';
+  changePinNew = '';
+  changePinStep = 'old';
+  updateChangePinDots();
+  document.getElementById('change-pin-error').textContent = '';
+  document.getElementById('modal-change-pin').classList.remove('hidden');
+
+  document.querySelectorAll('#change-pin-numpad .pin-btn[data-val]').forEach(btn => {
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    newBtn.addEventListener('click', () => {
+      if (changePinStep === 'old' && changePinOld.length < 4) {
+        changePinOld += newBtn.dataset.val;
+      } else if (changePinStep === 'new' && changePinNew.length < 4) {
+        changePinNew += newBtn.dataset.val;
+      }
+      updateChangePinDots();
+      checkChangePinProgress();
+    });
+  });
+
+  const clearBtn = document.getElementById('change-pin-clear');
+  const newClear = clearBtn.cloneNode(true);
+  clearBtn.parentNode.replaceChild(newClear, clearBtn);
+  newClear.addEventListener('click', () => {
+    if (changePinStep === 'old') changePinOld = changePinOld.slice(0, -1);
+    else changePinNew = changePinNew.slice(0, -1);
+    updateChangePinDots();
+  });
+
+  const submitBtn = document.getElementById('change-pin-submit');
+  const newSubmit = submitBtn.cloneNode(true);
+  submitBtn.parentNode.replaceChild(newSubmit, submitBtn);
+  newSubmit.addEventListener('click', checkChangePinProgress);
+}
+
+function updateChangePinDots() {
+  document.querySelectorAll('#change-pin-dots-old .dot').forEach((dot, i) => {
+    dot.classList.toggle('filled', i < changePinOld.length);
+  });
+  document.querySelectorAll('#change-pin-dots-new .dot').forEach((dot, i) => {
+    dot.classList.toggle('filled', i < changePinNew.length);
+  });
+}
+
+function checkChangePinProgress() {
+  if (changePinStep === 'old' && changePinOld.length === 4) {
+    if (changePinOld !== CORRECT_PIN) {
+      document.getElementById('change-pin-error').textContent = 'Pogrešan trenutni PIN!';
+      changePinOld = '';
+      updateChangePinDots();
+      return;
+    }
+    changePinStep = 'new';
+    document.getElementById('change-pin-error').textContent = '';
+  } else if (changePinStep === 'new' && changePinNew.length === 4) {
+   await fetch(`${API}/pin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin: changePinNew })
+    });
+    CORRECT_PIN = changePinNew;
+    closeModal('modal-change-pin');
+    alert('✅ PIN uspješno promijenjen!');
+  }
 }
 
 // ─── START ────────────────────────────────────────────
