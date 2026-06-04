@@ -12,10 +12,26 @@ app.use(express.static(path.join(__dirname, '../client')));
 
 // ─── STOLOVI ────────────────────────────────────────────
 
-// Dohvati sve stolove
+// Dohvati sve stolove sa aktivnim sesijama
 app.get('/api/tables', (req, res) => {
   const tables = db.prepare('SELECT * FROM tables ORDER BY id').all();
-  res.json(tables);
+  
+  const result = tables.map(table => {
+    const session = db.prepare(
+      'SELECT * FROM sessions WHERE table_id = ? AND closed_at IS NULL'
+    ).get(table.id);
+    
+    if (session) {
+      const items = db.prepare(
+        'SELECT * FROM session_items WHERE session_id = ? ORDER BY added_at'
+      ).all(session.id);
+      return { ...table, session: { ...session, items } };
+    }
+    
+    return { ...table, session: null };
+  });
+  
+  res.json(result);
 });
 
 // Dodaj novi sto

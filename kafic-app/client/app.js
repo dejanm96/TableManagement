@@ -90,15 +90,15 @@ async function init() {
 
 async function loadTables() {
   const res = await fetch(`${API}/tables`);
-  tables = await res.json();
+  const data = await res.json();
+  tables = data;
 
   const area = document.getElementById('table-area');
   const cards = area.querySelectorAll('.table-card');
   cards.forEach(card => card.remove());
 
-  for (const table of tables) {
-    const session = await fetchSession(table.id);
-    renderTable(table, session);
+  for (const table of data) {
+    renderTable(table, table.session);
   }
 }
 
