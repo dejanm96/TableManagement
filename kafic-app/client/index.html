@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tropico Manager</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <h1>☕ Tropico Manager</h1>
+    <div class="header-actions">
+      <button id="btn-today-report" class="btn-secondary">📊 Dnevni izvještaj</button>
+      <button id="btn-history" class="btn-secondary">📁 Istorija</button>
+      <button id="btn-edit-mode" class="btn-warning">✏️ Uredi raspored</button>
+    </div>
+  </header>
+
+  <!-- GLAVNA POVRŠINA SA STOLOVIMA -->
+  <main>
+<div id="table-area">
+  <div id="area-label-inside">Unutra</div>
+  <div id="area-label-terrace">Terasa</div>
+</div>
+
+    <!-- Dugme za dodavanje stola (vidljivo samo u edit modu) -->
+    <button id="btn-add-table" class="hidden">+ Dodaj sto</button>
+  </main>
+
+  <!-- MODAL: Unos na stolu -->
+  <div id="modal-session" class="modal hidden">
+    <div class="modal-box">
+      <h2 id="modal-title">Sto 1</h2>
+      <div id="session-info" class="hidden">
+        <p>Gost: <strong id="session-guest"></strong></p>
+        <p>Trenutno: <strong id="session-total"></strong> KM</p>
+      </div>
+      <div id="session-form">
+        <input id="input-guest" type="text" placeholder="Ime gosta" />
+        <input id="input-amount" type="number" placeholder="Iznos (KM)" min="0" step="0.50" />
+        <button id="btn-add-amount" class="btn-primary">Dodaj iznos</button>
+      </div>
+      <div class="modal-actions">
+        <button id="btn-close-session" class="btn-danger hidden">✅ Plaćeno — resetuj sto</button>
+        <button id="btn-cancel" class="btn-secondary">Zatvori</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Dnevni izvještaj -->
+  <div id="modal-report" class="modal hidden">
+    <div class="modal-box">
+      <h2>📊 Dnevni izvještaj</h2>
+      <div id="report-content"></div>
+      <div class="modal-actions">
+        <button id="btn-export-pdf" class="btn-primary">⬇️ Skini PDF</button>
+        <button id="btn-close-report" class="btn-secondary">Zatvori</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Istorija -->
+  <div id="modal-history" class="modal hidden">
+    <div class="modal-box">
+      <h2>📁 Istorija izvještaja</h2>
+      <div id="history-content"></div>
+      <div class="modal-actions">
+        <button id="btn-close-history" class="btn-secondary">Zatvori</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Dodaj sto (edit mode) -->
+  <div id="modal-add-table" class="modal hidden">
+    <div class="modal-box">
+      <h2>Dodaj novi sto</h2>
+      <input id="input-table-name" type="text" placeholder="Naziv stola (npr. Sto 1, Terasa...)" />
+      <div class="modal-actions">
+        <button id="btn-confirm-add-table" class="btn-primary">Dodaj</button>
+        <button id="btn-cancel-add-table" class="btn-secondary">Odustani</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF biblioteka -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
