@@ -519,13 +519,22 @@ function setupEventListeners() {
   setupTouchScroll();
 
   // Dropdown
-  document.getElementById('btn-menu').addEventListener('click', (e) => {
+document.getElementById('btn-menu').addEventListener('click', (e) => {
     e.stopPropagation();
+    e.preventDefault();
     document.getElementById('dropdown-menu').classList.toggle('hidden');
   });
-  document.addEventListener('click', () => {
-    document.getElementById('dropdown-menu').classList.add('hidden');
+
+  document.getElementById('dropdown-menu').addEventListener('click', (e) => {
+    e.stopPropagation();
   });
+
+  if (!window._dropdownListenerAdded) {
+    window._dropdownListenerAdded = true;
+    document.addEventListener('click', () => {
+      document.getElementById('dropdown-menu').classList.add('hidden');
+    });
+  }
 
   // Fullscreen
   document.getElementById('btn-fullscreen').addEventListener('click', toggleFullscreen);
