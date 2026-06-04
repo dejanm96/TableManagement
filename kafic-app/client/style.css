@@ -94,7 +94,7 @@ main {
 #table-area::after {
   content: '';
   position: absolute;
-  left: 75%;
+  left: 65%;
   top: 0;
   bottom: 0;
   width: 2px;
@@ -116,7 +116,7 @@ main {
 
 #area-label-terrace {
   position: absolute;
-  left: 77%;
+  left: 67%;
   top: 10px;
   color: rgba(255,255,255,0.2);
   font-size: 0.85rem;
@@ -177,18 +177,18 @@ main {
 }
 
 .table-card .table-name {
-  font-size: 0.85rem;
+  font-size: 0.68rem;
   font-weight: 700;
   text-align: center;
   color: #eee;
 }
 
 .table-card .table-guest {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: #aaa;
-  margin-top: 4px;
+  margin-top: 2px;
   text-align: center;
-}
+} 
 
 .table-card .table-amount {
   font-size: 0.95rem;
@@ -368,4 +368,29 @@ main {
 .session-total-row strong {
   color: #f9c74f;
   font-size: 1.1rem;
+}
+
+/* ─── SANK ───────────────────────────────────────────── */
+
+#sank {
+  position: absolute;
+  top: 0;
+  left: 13%;
+  width: 38%;
+  height: 44px;
+  background: rgba(233, 69, 96, 0.15);
+  border: 2px solid rgba(233, 69, 96, 0.4);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+#sank span {
+  color: rgba(233, 69, 96, 0.7);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 3px;
 }
