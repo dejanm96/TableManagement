@@ -38,14 +38,6 @@ async function setupPin() {
   document.getElementById('pin-submit').addEventListener('click', checkPin);
 }
 
-  document.getElementById('pin-clear').addEventListener('click', () => {
-    pinValue = pinValue.slice(0, -1);
-    updatePinDots();
-  });
-
-  document.getElementById('pin-submit').addEventListener('click', checkPin);
-}
-
 function updatePinDots() {
   const dots = document.querySelectorAll('.dot');
   dots.forEach((dot, i) => {
