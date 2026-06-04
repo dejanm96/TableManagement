@@ -17,8 +17,10 @@ async function loadTables() {
   const res = await fetch(`${API}/tables`);
   tables = await res.json();
 
+  // Ukloni samo stolove, ne i sank i labele
   const area = document.getElementById('table-area');
-  area.innerHTML = '';
+  const cards = area.querySelectorAll('.table-card');
+  cards.forEach(card => card.remove());
 
   for (const table of tables) {
     const session = await fetchSession(table.id);
