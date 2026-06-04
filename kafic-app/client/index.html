@@ -62,40 +62,40 @@
     <button id="btn-add-table" class="hidden">+ Dodaj sto</button>
   </main>
 
-  <!-- MODAL: Unos na stolu -->
-  <div id="modal-session" class="modal hidden">
-    <div class="modal-box">
-      <h2 id="modal-title">Sto 1</h2>
-      <div id="session-info" class="hidden">
-        <p>Gost: <strong id="session-guest"></strong></p>
-        <div id="session-items-list"></div>
-        <p class="session-total-row">Ukupno: <strong id="session-total"></strong> KM</p>
+ <!-- MODAL: Unos na stolu -->
+<div id="modal-session" class="modal hidden">
+  <div class="modal-box">
+    <h2 id="modal-title">Sto 1</h2>
+    <div id="session-info" class="hidden">
+      <p>Gost: <strong id="session-guest"></strong></p>
+      <div id="session-items-list"></div>
+      <p class="session-total-row">Ukupno: <strong id="session-total"></strong> KM</p>
+    </div>
+    <button id="btn-close-session" class="btn-danger hidden">✅ Plaćeno — resetuj sto</button>
+    <div id="session-form">
+      <input id="input-guest" type="text" placeholder="Ime gosta" />
+      <div id="amount-display">0.00 KM</div>
+      <div id="session-numpad">
+        <button class="num-btn" data-val="1">1</button>
+        <button class="num-btn" data-val="2">2</button>
+        <button class="num-btn" data-val="3">3</button>
+        <button class="num-btn" data-val="4">4</button>
+        <button class="num-btn" data-val="5">5</button>
+        <button class="num-btn" data-val="6">6</button>
+        <button class="num-btn" data-val="7">7</button>
+        <button class="num-btn" data-val="8">8</button>
+        <button class="num-btn" data-val="9">9</button>
+        <button class="num-btn" id="num-dot">.</button>
+        <button class="num-btn" data-val="0">0</button>
+        <button class="num-btn" id="num-clear">⌫</button>
       </div>
-      <div id="session-form">
-        <input id="input-guest" type="text" placeholder="Ime gosta" />
-        <div id="amount-display">0.00 KM</div>
-        <div id="session-numpad">
-          <button class="num-btn" data-val="1">1</button>
-          <button class="num-btn" data-val="2">2</button>
-          <button class="num-btn" data-val="3">3</button>
-          <button class="num-btn" data-val="4">4</button>
-          <button class="num-btn" data-val="5">5</button>
-          <button class="num-btn" data-val="6">6</button>
-          <button class="num-btn" data-val="7">7</button>
-          <button class="num-btn" data-val="8">8</button>
-          <button class="num-btn" data-val="9">9</button>
-          <button class="num-btn" id="num-dot">.</button>
-          <button class="num-btn" data-val="0">0</button>
-          <button class="num-btn" id="num-clear">⌫</button>
-        </div>
-        <button id="btn-add-amount" class="btn-primary">Dodaj iznos</button>
-      </div>
-      <div class="modal-actions">
-        <button id="btn-close-session" class="btn-danger hidden">✅ Plaćeno — resetuj sto</button>
-        <button id="btn-cancel" class="btn-secondary">Zatvori</button>
-      </div>
+      <button id="btn-add-amount" class="btn-primary">Dodaj iznos</button>
+    </div>
+    <div class="modal-actions">
+      <button id="btn-cancel" class="btn-secondary">Zatvori</button>
     </div>
   </div>
+</div>
 
   <!-- MODAL: Dnevni izvještaj -->
   <div id="modal-report" class="modal hidden">
