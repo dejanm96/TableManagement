@@ -638,7 +638,7 @@ function updateChangePinDots() {
   });
 }
 
-function checkChangePinProgress() {
+async function checkChangePinProgress() {
   if (changePinStep === 'old' && changePinOld.length === 4) {
     if (changePinOld !== CORRECT_PIN) {
       document.getElementById('change-pin-error').textContent = 'Pogrešan trenutni PIN!';
