@@ -397,3 +397,156 @@ main {
   font-weight: 700;
   letter-spacing: 3px;
 }
+
+/* ─── PIN EKRAN ──────────────────────────────────────── */
+
+#pin-screen {
+  position: fixed;
+  inset: 0;
+  background: #1a1a2e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+#pin-box {
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 20px;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 320px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+#pin-box h2 {
+  color: #e94560;
+  font-size: 1.4rem;
+}
+
+#pin-box p {
+  color: #aaa;
+  font-size: 0.95rem;
+}
+
+#pin-dots {
+  display: flex;
+  gap: 16px;
+}
+
+.dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #0f3460;
+  border: 2px solid #e94560;
+  transition: background 0.2s;
+}
+
+.dot.filled {
+  background: #e94560;
+}
+
+#pin-error {
+  color: #e94560;
+  font-size: 0.85rem;
+  height: 16px;
+}
+
+#pin-numpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+.pin-btn {
+  background: #0f3460;
+  color: #eee;
+  border: none;
+  border-radius: 12px;
+  padding: 18px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pin-btn:hover {
+  background: #e94560;
+  transform: scale(1.05);
+}
+
+#pin-submit {
+  background: #2d6a4f;
+  color: white;
+}
+
+#pin-submit:hover {
+  background: #40916c;
+}
+
+/* ─── SAT ────────────────────────────────────────────── */
+
+#header-clock {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f9c74f;
+  letter-spacing: 2px;
+}
+
+/* ─── FULLSCREEN & ODJAVA ────────────────────────────── */
+
+#btn-logout {
+  background: #2d3561;
+  color: #eee;
+}
+
+/* ─── NUMPAD ZA IZNOS ────────────────────────────────── */
+
+#amount-display {
+  background: #0f3460;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #f9c74f;
+  text-align: right;
+  width: 100%;
+}
+
+#session-numpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+.num-btn {
+  background: #0f3460;
+  color: #eee;
+  border: none;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.num-btn:hover {
+  background: #e94560;
+  transform: scale(1.05);
+}
+
+#num-clear {
+  background: #7b1d1d;
+}
+
+#num-dot {
+  background: #1a3a6e;
+}

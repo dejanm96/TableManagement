@@ -1,14 +1,89 @@
 const API = '/api';
+const CORRECT_PIN = '2013'; // Promijeni na željeni PIN
 
 let tables = [];
 let editMode = false;
 let activeTableId = null;
+let amountValue = '';
+
+// ─── PIN ──────────────────────────────────────────────
+
+let pinValue = '';
+
+function setupPin() {
+  const btns = document.querySelectorAll('.pin-btn[data-val]');
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (pinValue.length >= 4) return;
+      pinValue += btn.dataset.val;
+      updatePinDots();
+      if (pinValue.length === 4) checkPin();
+    });
+  });
+
+  document.getElementById('pin-clear').addEventListener('click', () => {
+    pinValue = pinValue.slice(0, -1);
+    updatePinDots();
+  });
+
+  document.getElementById('pin-submit').addEventListener('click', checkPin);
+}
+
+function updatePinDots() {
+  const dots = document.querySelectorAll('.dot');
+  dots.forEach((dot, i) => {
+    dot.classList.toggle('filled', i < pinValue.length);
+  });
+}
+
+function checkPin() {
+  if (pinValue === CORRECT_PIN) {
+    document.getElementById('pin-screen').style.display = 'none';
+    document.querySelector('header').classList.remove('hidden');
+    document.querySelector('main').classList.remove('hidden');
+    init();
+  } else {
+    document.getElementById('pin-error').textContent = 'Pogrešan PIN!';
+    pinValue = '';
+    updatePinDots();
+    setTimeout(() => {
+      document.getElementById('pin-error').textContent = '';
+    }, 1500);
+  }
+}
+
+// ─── SAT ──────────────────────────────────────────────
+
+function startClock() {
+  function update() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('header-clock').textContent = `${h}:${m}:${s}`;
+  }
+  update();
+  setInterval(update, 1000);
+}
+
+// ─── FULLSCREEN ───────────────────────────────────────
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+    document.getElementById('btn-fullscreen').textContent = '✕ Izlaz';
+  } else {
+    document.exitFullscreen();
+    document.getElementById('btn-fullscreen').textContent = '⛶ Fullscreen';
+  }
+}
 
 // ─── INIT ─────────────────────────────────────────────
 
 async function init() {
   await loadTables();
   setupEventListeners();
+  startClock();
 }
 
 // ─── UČITAJ STOLOVE ───────────────────────────────────
@@ -17,7 +92,6 @@ async function loadTables() {
   const res = await fetch(`${API}/tables`);
   tables = await res.json();
 
-  // Ukloni samo stolove, ne i sank i labele
   const area = document.getElementById('table-area');
   const cards = area.querySelectorAll('.table-card');
   cards.forEach(card => card.remove());
@@ -54,14 +128,12 @@ function renderTable(table, session) {
     ` : '<div class="table-guest">Slobodan</div>'}
   `;
 
-  // Klik na sto — otvori modal
   card.addEventListener('click', (e) => {
     if (e.target.classList.contains('table-delete-btn')) return;
     if (editMode) return;
     openSessionModal(table, session);
   });
 
-  // Brisanje stola
   card.querySelector('.table-delete-btn').addEventListener('click', async (e) => {
     e.stopPropagation();
     if (confirm(`Obriši "${table.name}"?`)) {
@@ -70,9 +142,7 @@ function renderTable(table, session) {
     }
   });
 
-  // Drag & drop u edit modu
   makeDraggable(card, table);
-
   area.appendChild(card);
 }
 
@@ -103,7 +173,6 @@ function makeDraggable(card, table) {
     });
   }
 
-  // Mouse
   card.addEventListener('mousedown', (e) => {
     if (e.target.classList.contains('table-delete-btn')) return;
     if (!dragStart(e.clientX, e.clientY)) return;
@@ -123,7 +192,6 @@ function makeDraggable(card, table) {
     document.addEventListener('mouseup', onUp);
   });
 
-  // Touch
   card.addEventListener('touchstart', (e) => {
     if (e.target.classList.contains('table-delete-btn')) return;
     const touch = e.touches[0];
@@ -146,16 +214,47 @@ function makeDraggable(card, table) {
   });
 }
 
+// ─── NUMPAD ZA IZNOS ──────────────────────────────────
+
+function setupNumpad() {
+  document.querySelectorAll('.num-btn[data-val]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (amountValue.length >= 8) return;
+      if (btn.dataset.val === '0' && amountValue === '') return;
+      amountValue += btn.dataset.val;
+      updateAmountDisplay();
+    });
+  });
+
+  document.getElementById('num-dot').addEventListener('click', () => {
+    if (amountValue.includes('.')) return;
+    if (amountValue === '') amountValue = '0';
+    amountValue += '.';
+    updateAmountDisplay();
+  });
+
+  document.getElementById('num-clear').addEventListener('click', () => {
+    amountValue = amountValue.slice(0, -1);
+    updateAmountDisplay();
+  });
+}
+
+function updateAmountDisplay() {
+  const display = document.getElementById('amount-display');
+  display.textContent = amountValue ? `${amountValue} KM` : '0.00 KM';
+}
+
 // ─── SESSION MODAL ────────────────────────────────────
 
 async function openSessionModal(table, session) {
   activeTableId = table.id;
+  amountValue = '';
+  updateAmountDisplay();
 
   document.getElementById('modal-title').textContent = table.name;
   document.getElementById('modal-session').classList.remove('hidden');
 
   const guestInput = document.getElementById('input-guest');
-  const amountInput = document.getElementById('input-amount');
   const sessionInfo = document.getElementById('session-info');
   const closeBtn = document.getElementById('btn-close-session');
 
@@ -165,10 +264,8 @@ async function openSessionModal(table, session) {
     document.getElementById('session-total').textContent = session.total_amount.toFixed(2);
     guestInput.value = session.guest_name;
     guestInput.disabled = true;
-    amountInput.value = '';
     closeBtn.classList.remove('hidden');
 
-    // Lista iznosa
     const itemsList = document.getElementById('session-items-list');
     itemsList.innerHTML = session.items.map(item => `
       <div class="session-item" id="item-${item.id}">
@@ -180,7 +277,6 @@ async function openSessionModal(table, session) {
     sessionInfo.classList.add('hidden');
     guestInput.value = '';
     guestInput.disabled = false;
-    amountInput.value = '';
     closeBtn.classList.add('hidden');
     document.getElementById('session-items-list').innerHTML = '';
   }
@@ -188,13 +284,9 @@ async function openSessionModal(table, session) {
 
 async function deleteItem(itemId, sessionId) {
   await fetch(`${API}/session-items/${itemId}`, { method: 'DELETE' });
-  
-  // Refresh modal
   const session = await fetchSession(activeTableId);
   const table = tables.find(t => t.id === activeTableId);
   openSessionModal(table, session);
-  
-  // Refresh stolovi u pozadini
   await loadTables();
 }
 
@@ -202,7 +294,7 @@ async function deleteItem(itemId, sessionId) {
 
 async function addAmount() {
   const guestName = document.getElementById('input-guest').value.trim();
-  const amount = parseFloat(document.getElementById('input-amount').value);
+  const amount = parseFloat(amountValue);
 
   if (!guestName) return alert('Unesi ime gosta!');
   if (!amount || amount <= 0) return alert('Unesi ispravan iznos!');
@@ -217,7 +309,7 @@ async function addAmount() {
   await loadTables();
 }
 
-// ─── RESETUJ STO (PLAĆENO) ────────────────────────────
+// ─── RESETUJ STO ──────────────────────────────────────
 
 async function closeSession() {
   if (!confirm('Potvrdi plaćanje i resetuj sto?')) return;
@@ -313,7 +405,7 @@ async function openTodayReport() {
   document.getElementById('modal-report').classList.remove('hidden');
 }
 
-// ─── ISTORIJA ────────────────────────────────────────
+// ─── HISTORIJA ────────────────────────────────────────
 
 async function openHistory() {
   const res = await fetch(`${API}/reports`);
@@ -322,7 +414,7 @@ async function openHistory() {
   const content = document.getElementById('history-content');
 
   if (reports.length === 0) {
-    content.innerHTML = '<p style="color:#aaa;text-align:center;padding:20px;">Nema istorije.</p>';
+    content.innerHTML = '<p style="color:#aaa;text-align:center;padding:20px;">Nema historije.</p>';
   } else {
     content.innerHTML = reports.map(r => `
       <div class="history-item">
@@ -365,51 +457,15 @@ async function downloadPDF(date, total) {
   doc.save(`izvjestaj-${date}.pdf`);
 }
 
-// ─── POMOĆNE FUNKCIJE ─────────────────────────────────
-
-function closeModal(id) {
-  document.getElementById(id).classList.add('hidden');
-}
-
-// ─── EVENT LISTENERS ──────────────────────────────────
-
-function setupEventListeners() {
-  setupTouchScroll();
-  document.getElementById('btn-edit-mode').addEventListener('click', toggleEditMode);
-  document.getElementById('btn-add-table').addEventListener('click', () => {
-    document.getElementById('modal-add-table').classList.remove('hidden');
-  });
-  document.getElementById('btn-confirm-add-table').addEventListener('click', confirmAddTable);
-  document.getElementById('btn-cancel-add-table').addEventListener('click', () => closeModal('modal-add-table'));
-  document.getElementById('btn-add-amount').addEventListener('click', addAmount);
-  document.getElementById('btn-close-session').addEventListener('click', closeSession);
-  document.getElementById('btn-cancel').addEventListener('click', () => closeModal('modal-session'));
-  document.getElementById('btn-today-report').addEventListener('click', openTodayReport);
-  document.getElementById('btn-history').addEventListener('click', openHistory);
-document.getElementById('btn-export-pdf').addEventListener('click', async () => {
-    const today = new Date().toISOString().split('T')[0];
-    const reportRes = await fetch(`${API}/reports`);
-    const reports = await reportRes.json();
-    const todayReport = reports.find(r => r.date === today);
-    const total = todayReport ? todayReport.total_revenue : 0;
-    downloadPDF(today, total);
-  });
-  document.getElementById('btn-close-report').addEventListener('click', () => closeModal('modal-report'));
-  document.getElementById('btn-close-history').addEventListener('click', () => closeModal('modal-history'));
-}
-
-
 // ─── TOUCH SCROLL ─────────────────────────────────────
 
 function setupTouchScroll() {
-  const area = document.getElementById('table-area');
   const main = document.querySelector('main');
   let startX, startY, scrollLeft, scrollTop;
   let isDragging = false;
 
   main.addEventListener('touchstart', (e) => {
     if (editMode) return;
-    // Provjeri da li je klik na sto
     if (e.target.closest('.table-card')) return;
     isDragging = true;
     startX = e.touches[0].clientX;
@@ -431,6 +487,50 @@ function setupTouchScroll() {
     isDragging = false;
   });
 }
+
+// ─── POMOĆNE FUNKCIJE ─────────────────────────────────
+
+function closeModal(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+// ─── EVENT LISTENERS ──────────────────────────────────
+
+function setupEventListeners() {
+  setupNumpad();
+  setupTouchScroll();
+  document.getElementById('btn-edit-mode').addEventListener('click', toggleEditMode);
+  document.getElementById('btn-fullscreen').addEventListener('click', toggleFullscreen);
+  document.getElementById('btn-logout').addEventListener('click', () => {
+    document.getElementById('pin-screen').style.display = 'flex';
+    document.querySelector('header').classList.add('hidden');
+    document.querySelector('main').classList.add('hidden');
+    pinValue = '';
+    updatePinDots();
+  });
+  document.getElementById('btn-add-table').addEventListener('click', () => {
+    document.getElementById('modal-add-table').classList.remove('hidden');
+  });
+  document.getElementById('btn-confirm-add-table').addEventListener('click', confirmAddTable);
+  document.getElementById('btn-cancel-add-table').addEventListener('click', () => closeModal('modal-add-table'));
+  document.getElementById('btn-add-amount').addEventListener('click', addAmount);
+  document.getElementById('btn-close-session').addEventListener('click', closeSession);
+  document.getElementById('btn-cancel').addEventListener('click', () => closeModal('modal-session'));
+  document.getElementById('btn-today-report').addEventListener('click', openTodayReport);
+  document.getElementById('btn-history').addEventListener('click', openHistory);
+  document.getElementById('btn-export-pdf').addEventListener('click', async () => {
+    const today = new Date().toISOString().split('T')[0];
+    const reportRes = await fetch(`${API}/reports`);
+    const reports = await reportRes.json();
+    const todayReport = reports.find(r => r.date === today);
+    const total = todayReport ? todayReport.total_revenue : 0;
+    downloadPDF(today, total);
+  });
+  document.getElementById('btn-close-report').addEventListener('click', () => closeModal('modal-report'));
+  document.getElementById('btn-close-history').addEventListener('click', () => closeModal('modal-history'));
+}
+
 // ─── START ────────────────────────────────────────────
 
-init();
+setupPin();
+startClock();
