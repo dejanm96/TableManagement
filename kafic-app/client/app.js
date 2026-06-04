@@ -412,7 +412,7 @@ async function openTodayReport() {
     content.innerHTML = `
       ${sessions.map(s => `
         <div class="report-row">
-          <span>${s.guest_name}</span>
+          <span>${s.table_name} — ${s.guest_name}</span>
           <span>${s.total_amount.toFixed(2)} KM</span>
         </div>
       `).join('')}
@@ -466,7 +466,7 @@ async function downloadPDF(date, total) {
   let y = 35;
 
   sessions.forEach(s => {
-    doc.text(`${s.guest_name}`, 14, y);
+    doc.text(`${s.table_name} — ${s.guest_name}`, 14, y);
     doc.text(`${s.total_amount.toFixed(2)} KM`, 170, y, { align: 'right' });
     y += 8;
   });
