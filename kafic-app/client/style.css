@@ -641,3 +641,26 @@ main {
   color: #f9c74f;
   margin-top: 2px;
 }
+
+.table-edit-btn {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  background: #f5a623;
+  color: #1a1a2e;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 0.6rem;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  padding: 0;
+}
+
+.edit-mode .table-edit-btn {
+  display: flex;
+}
