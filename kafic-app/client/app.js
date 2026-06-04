@@ -146,7 +146,7 @@ function makeDraggable(card, table) {
 
 // ─── SESSION MODAL ────────────────────────────────────
 
-function openSessionModal(table, session) {
+async function openSessionModal(table, session) {
   activeTableId = table.id;
 
   document.getElementById('modal-title').textContent = table.name;
@@ -157,8 +157,7 @@ function openSessionModal(table, session) {
   const sessionInfo = document.getElementById('session-info');
   const closeBtn = document.getElementById('btn-close-session');
 
-if (session) {
-    // Sto je zauzet
+  if (session) {
     sessionInfo.classList.remove('hidden');
     document.getElementById('session-guest').textContent = session.guest_name;
     document.getElementById('session-total').textContent = session.total_amount.toFixed(2);
@@ -166,14 +165,35 @@ if (session) {
     guestInput.disabled = true;
     amountInput.value = '';
     closeBtn.classList.remove('hidden');
+
+    // Lista iznosa
+    const itemsList = document.getElementById('session-items-list');
+    itemsList.innerHTML = session.items.map(item => `
+      <div class="session-item" id="item-${item.id}">
+        <span>${item.amount.toFixed(2)} KM</span>
+        <button class="item-delete-btn" onclick="deleteItem(${item.id}, ${session.id})">✕</button>
+      </div>
+    `).join('');
   } else {
-    // Sto je slobodan
     sessionInfo.classList.add('hidden');
     guestInput.value = '';
     guestInput.disabled = false;
     amountInput.value = '';
     closeBtn.classList.add('hidden');
+    document.getElementById('session-items-list').innerHTML = '';
   }
+}
+
+async function deleteItem(itemId, sessionId) {
+  await fetch(`${API}/session-items/${itemId}`, { method: 'DELETE' });
+  
+  // Refresh modal
+  const session = await fetchSession(activeTableId);
+  const table = tables.find(t => t.id === activeTableId);
+  openSessionModal(table, session);
+  
+  // Refresh stolovi u pozadini
+  await loadTables();
 }
 
 // ─── DODAJ IZNOS ──────────────────────────────────────

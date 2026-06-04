@@ -92,6 +92,23 @@ app.post('/api/tables/:id/session', (req, res) => {
   res.json({ ok: true, session_id: result.lastInsertRowid });
 });
 
+// Obrisi jedan iznos
+app.delete('/api/session-items/:itemId', (req, res) => {
+  const item = db.prepare(
+    'SELECT * FROM session_items WHERE id = ?'
+  ).get(req.params.itemId);
+
+  if (!item) return res.json({ ok: false });
+
+  db.prepare('DELETE FROM session_items WHERE id = ?').run(req.params.itemId);
+
+  db.prepare(
+    'UPDATE sessions SET total_amount = total_amount - ? WHERE id = ?'
+  ).run(item.amount, item.session_id);
+
+  res.json({ ok: true });
+});
+
 // Resetuj sto (plaćeno)
 app.post('/api/tables/:id/close', (req, res) => {
   const session = db.prepare(

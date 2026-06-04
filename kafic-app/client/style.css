@@ -328,3 +328,44 @@ main {
   font-size: 0.8rem;
   padding: 5px 10px;
 }
+
+/* ─── LISTA IZNOSA ────────────────────────────────────── */
+
+.session-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #0f3460;
+}
+
+.item-delete-btn {
+  background: #c0392b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.2s;
+}
+
+.item-delete-btn:hover {
+  background: #e94560;
+  transform: scale(1.1);
+}
+
+.session-total-row {
+  margin-top: 8px;
+  font-size: 1rem;
+}
+
+.session-total-row strong {
+  color: #f9c74f;
+  font-size: 1.1rem;
+}
