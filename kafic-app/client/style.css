@@ -248,15 +248,27 @@ main {
   background: #16213e;
   border: 1px solid #0f3460;
   border-radius: 16px;
-  padding: 28px;
+  padding: 20px;
   width: 380px;
   max-width: 95vw;
-  max-height: 90vh;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.5);
   overflow: hidden;
+}
+
+#session-form {
+  flex-shrink: 0;
+}
+
+#btn-close-session {
+  flex-shrink: 0;
+}
+
+.modal-actions {
+  flex-shrink: 0;
 }
 
 .modal-box h2 {
@@ -565,17 +577,20 @@ main {
 #session-info {
   display: flex;
   flex-direction: column;
-  flex-shrink: 1;
   overflow: hidden;
-  min-height: 140px;
+  flex: 1;
+  min-height: 0;
 }
 
 .session-total-row {
   flex-shrink: 0;
   margin-top: 8px;
   font-size: 1rem;
-  border-top: 1px solid #0f3460;
+  border-top: 2px solid #e94560;
   padding-top: 8px;
+  background: #16213e;
+  position: sticky;
+  bottom: 0;
 }
 
 #session-form {
