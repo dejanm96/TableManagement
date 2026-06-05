@@ -493,7 +493,7 @@ async function openHistory() {
   } else {
     content.innerHTML = reports.map(r => `
       <div class="history-item">
-        <span>${r.date}</span>
+        <span>${r.date.split('-').reverse().join('.')}</span>
         <span style="color:#f9c74f;font-weight:700;">${r.total_revenue.toFixed(2)} KM</span>
         <button class="btn-secondary" onclick="downloadPDF('${r.date}', ${r.total_revenue})">
           ⬇️ PDF
@@ -515,7 +515,7 @@ async function downloadPDF(date, total) {
   const doc = new jsPDF('landscape');
 
   doc.setFontSize(16);
-  doc.text(`Izvjestaj: ${date}`, 14, 18);
+  doc.text(`Izvjestaj: ${date.split('-').reverse().join('.')}`, 14, 18);
 
   doc.setFontSize(10);
   const headers = ['Sto', 'Gost', 'Dolazak', 'Konobar', 'Iznos'];
