@@ -18,34 +18,22 @@ body {
 
 header {
   background: #16213e;
-  padding: 8px 12px;
+  padding: 12px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-bottom: 2px solid #0f3460;
   box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-  gap: 8px;
-  flex-wrap: nowrap;
 }
 
 header h1 {
-  font-size: 1rem;
+  font-size: 1.4rem;
   color: #e94560;
-  white-space: nowrap;
-  flex-shrink: 0;
 }
 
 .header-actions {
   display: flex;
-  gap: 6px;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.header-actions button {
-  padding: 6px 10px;
-  font-size: 0.8rem;
-  white-space: nowrap;
+  gap: 10px;
 }
 
 /* ─── BUTTONS ─────────────────────────────────────────── */
@@ -506,14 +494,11 @@ main {
 
 /* ─── SAT ────────────────────────────────────────────── */
 
-#header-waiter {
+#header-clock {
+  font-size: 1.2rem;
+  font-weight: 700;
   color: #f9c74f;
-  font-size: 0.8rem;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 80px;
+  letter-spacing: 2px;
 }
 
 /* ─── FULLSCREEN & ODJAVA ────────────────────────────── */
@@ -724,12 +709,8 @@ main {
 
 #header-waiter {
   color: #f9c74f;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 80px;
 }
 
 .waiter-item {
