@@ -164,6 +164,39 @@ app.post('/api/tables/:id/close', (req, res) => {
   res.json({ ok: true, amount: session.total_amount });
 });
 
+// ─── KONOBARI ────────────────────────────────────────────
+
+// Provjeri PIN konobara
+app.post('/api/waiters/login', (req, res) => {
+  const { pin } = req.body;
+  const waiter = db.prepare('SELECT * FROM waiters WHERE pin = ?').get(pin);
+  if (!waiter) return res.json({ ok: false });
+  res.json({ ok: true, id: waiter.id, name: waiter.name });
+});
+
+// Dohvati sve konobara
+app.get('/api/waiters', (req, res) => {
+  const waiters = db.prepare('SELECT id, name FROM waiters ORDER BY name').all();
+  res.json(waiters);
+});
+
+// Dodaj konobara
+app.post('/api/waiters', (req, res) => {
+  const { name, pin } = req.body;
+  try {
+    const result = db.prepare('INSERT INTO waiters (name, pin) VALUES (?, ?)').run(name, pin);
+    res.json({ ok: true, id: result.lastInsertRowid });
+  } catch (e) {
+    res.json({ ok: false, message: 'PIN već postoji!' });
+  }
+});
+
+// Obrisi konobara
+app.delete('/api/waiters/:id', (req, res) => {
+  db.prepare('DELETE FROM waiters WHERE id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
 // ─── STATISTIKA ──────────────────────────────────────────
 
 // Dnevni izvještaj

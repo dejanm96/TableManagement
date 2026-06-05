@@ -36,6 +36,13 @@ db.exec(`
   value TEXT NOT NULL
   );
   
+  CREATE TABLE IF NOT EXISTS waiters (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  pin TEXT NOT NULL UNIQUE,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
   CREATE TABLE IF NOT EXISTS daily_reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     date TEXT NOT NULL,

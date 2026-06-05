@@ -41,14 +41,16 @@
   <h1>☕ Tropico Manager</h1>
   <div id="header-clock">00:00:00</div>
   <div class="header-actions">
+    <span id="header-waiter"></span>
     <button id="btn-fullscreen" class="btn-secondary">⛶ Fullscreen</button>
     <div id="dropdown-wrapper">
       <button id="btn-menu" class="btn-secondary">⚙️ ▾</button>
       <div id="dropdown-menu" class="hidden">
         <button id="btn-today-report">📊 Dnevni izvještaj</button>
-        <button id="btn-history">📁 Istorija</button>
+        <button id="btn-history">📁 Historija</button>
         <button id="btn-edit-mode">✏️ Uredi raspored</button>
         <button id="btn-change-pin">🔑 Promijeni PIN</button>
+        <button id="btn-manage-waiters">👥 Konobari</button>
         <button id="btn-logout">🔒 Odjava</button>
       </div>
     </div>
@@ -173,6 +175,22 @@
     </div>
     <div class="modal-actions">
       <button id="btn-cancel-change-pin" class="btn-secondary">Odustani</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Konobari -->
+<div id="modal-waiters" class="modal hidden">
+  <div class="modal-box">
+    <h2>👥 Konobari</h2>
+    <div id="waiters-list"></div>
+    <hr style="border-color:#0f3460;margin:10px 0;">
+    <p style="color:#aaa;font-size:0.9rem;">Dodaj novog konobara</p>
+    <input id="input-waiter-name" type="text" placeholder="Ime konobara" />
+    <input id="input-waiter-pin" type="number" placeholder="PIN (4 cifre)" />
+    <div class="modal-actions">
+      <button id="btn-add-waiter" class="btn-primary">Dodaj</button>
+      <button id="btn-close-waiters" class="btn-secondary">Zatvori</button>
     </div>
   </div>
 </div>

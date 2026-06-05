@@ -1,5 +1,6 @@
 const API = '/api';
 let CORRECT_PIN = '2013';
+let currentWaiter = null;
 
 async function loadPin() {
   const res = await fetch(`${API}/pin`);
@@ -45,8 +46,29 @@ function updatePinDots() {
   });
 }
 
-function checkPin() {
+async function checkPin() {
+  // Prvo provjeri da li je konobar
+  const waiterRes = await fetch(`${API}/waiters/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pin: pinValue })
+  });
+  const waiterData = await waiterRes.json();
+
+  if (waiterData.ok) {
+    currentWaiter = { id: waiterData.id, name: waiterData.name };
+    document.getElementById('header-waiter').textContent = `👤 ${waiterData.name}`;
+    document.getElementById('pin-screen').style.display = 'none';
+    document.querySelector('header').classList.remove('hidden');
+    document.querySelector('main').classList.remove('hidden');
+    init();
+    return;
+  }
+
+  // Provjeri admin PIN
   if (pinValue === CORRECT_PIN) {
+    currentWaiter = { id: 0, name: 'Admin' };
+    document.getElementById('header-waiter').textContent = '👤 Admin';
     document.getElementById('pin-screen').style.display = 'none';
     document.querySelector('header').classList.remove('hidden');
     document.querySelector('main').classList.remove('hidden');
@@ -362,7 +384,7 @@ async function addAmount() {
   await fetch(`${API}/tables/${activeTableId}/session`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ guest_name: guestName, amount })
+    body: JSON.stringify({ guest_name: guestName, amount, waiter_name: currentWaiter ? currentWaiter.name : 'Konobar 1' })
   });
 
   closeModal('modal-session');
@@ -683,6 +705,14 @@ document.getElementById('btn-menu').addEventListener('click', (e) => {
   });
   document.getElementById('btn-cancel-change-pin').addEventListener('click', () => closeModal('modal-change-pin'));
 
+  // Konobari
+  document.getElementById('btn-manage-waiters').addEventListener('click', () => {
+    document.getElementById('dropdown-menu').classList.add('hidden');
+    openWaitersModal();
+  });
+  document.getElementById('btn-close-waiters').addEventListener('click', () => closeModal('modal-waiters'));
+  document.getElementById('btn-add-waiter').addEventListener('click', addWaiter);
+
   document.getElementById('btn-finish-edit').addEventListener('click', () => {
   toggleEditMode();
 });
@@ -762,5 +792,51 @@ async function checkChangePinProgress() {
   }
 }
 
+// ─── KONOBARI ─────────────────────────────────────────
+
+async function openWaitersModal() {
+  const res = await fetch(`${API}/waiters`);
+  const waiters = await res.json();
+
+  const list = document.getElementById('waiters-list');
+  if (waiters.length === 0) {
+    list.innerHTML = '<p style="color:#aaa;font-size:0.9rem;text-align:center;">Nema konobara.</p>';
+  } else {
+    list.innerHTML = waiters.map(w => `
+      <div class="waiter-item">
+        <span>👤 ${w.name}</span>
+        <button class="btn-danger" onclick="deleteWaiter(${w.id})">Obriši</button>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('input-waiter-name').value = '';
+  document.getElementById('input-waiter-pin').value = '';
+  document.getElementById('modal-waiters').classList.remove('hidden');
+}
+
+async function addWaiter() {
+  const name = document.getElementById('input-waiter-name').value.trim();
+  const pin = document.getElementById('input-waiter-pin').value.trim();
+
+  if (!name) return alert('Unesi ime konobara!');
+  if (!pin || pin.length !== 4) return alert('PIN mora biti 4 cifre!');
+
+  const res = await fetch(`${API}/waiters`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, pin })
+  });
+  const data = await res.json();
+
+  if (!data.ok) return alert(data.message || 'Greška!');
+  await openWaitersModal();
+}
+
+async function deleteWaiter(id) {
+  if (!confirm('Obriši konobara?')) return;
+  await fetch(`${API}/waiters/${id}`, { method: 'DELETE' });
+  await openWaitersModal();
+}
 // ─── START ────────────────────────────────────────────
 setupPin();

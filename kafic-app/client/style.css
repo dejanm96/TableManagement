@@ -704,3 +704,24 @@ main {
 .report-table tr:nth-child(even) td {
   background: rgba(255,255,255,0.03);
 }
+
+/* ─── KONOBARI ───────────────────────────────────────── */
+
+#header-waiter {
+  color: #f9c74f;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.waiter-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #0f3460;
+}
+
+.waiter-item button {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+}
