@@ -47,7 +47,6 @@ function updatePinDots() {
 }
 
 async function checkPin() {
-  // Prvo provjeri da li je konobar
   const waiterRes = await fetch(`${API}/waiters/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -58,21 +57,43 @@ async function checkPin() {
   if (waiterData.ok) {
     currentWaiter = { id: waiterData.id, name: waiterData.name };
     document.getElementById('header-waiter').textContent = `👤 ${waiterData.name}`;
-    document.getElementById('pin-screen').style.display = 'none';
-    document.querySelector('header').classList.remove('hidden');
-    document.querySelector('main').classList.remove('hidden');
-    init();
+    loginSuccess();
     return;
   }
 
-  // Provjeri admin PIN
   if (pinValue === CORRECT_PIN) {
     currentWaiter = { id: 0, name: 'Admin' };
     document.getElementById('header-waiter').textContent = '👤 Admin';
-    document.getElementById('pin-screen').style.display = 'none';
-    document.querySelector('header').classList.remove('hidden');
-    document.querySelector('main').classList.remove('hidden');
-    init();
+    loginSuccess();
+  } else {
+    document.getElementById('pin-error').textContent = 'Pogrešan PIN!';
+    pinValue = '';
+    updatePinDots();
+    setTimeout(() => {
+      document.getElementById('pin-error').textContent = '';
+    }, 1500);
+  }
+}
+
+async function checkPin() {
+  const waiterRes = await fetch(`${API}/waiters/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pin: pinValue })
+  });
+  const waiterData = await waiterRes.json();
+
+  if (waiterData.ok) {
+    currentWaiter = { id: waiterData.id, name: waiterData.name };
+    document.getElementById('header-waiter').textContent = `👤 ${waiterData.name}`;
+    loginSuccess();
+    return;
+  }
+
+  if (pinValue === CORRECT_PIN) {
+    currentWaiter = { id: 0, name: 'Admin' };
+    document.getElementById('header-waiter').textContent = '👤 Admin';
+    loginSuccess();
   } else {
     document.getElementById('pin-error').textContent = 'Pogrešan PIN!';
     pinValue = '';
@@ -113,11 +134,24 @@ function toggleFullscreen() {
 
 async function init() {
   await loadTables();
-  setupEventListeners();
-  startClock();
-  startTableTimers();
+}
+let pollingInterval = null;
+
+function startPolling() {
+  if (pollingInterval) clearInterval(pollingInterval);
+  pollingInterval = setInterval(async () => {
+    const modalOpen = document.querySelector('.modal:not(.hidden)');
+    if (modalOpen) return;
+    await loadTables();
+  }, 5000);
 }
 
+function stopPolling() {
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+  }
+}
 // ─── TIMER ZA STOLOVE ─────────────────────────────────
 
 function startTableTimers() {
@@ -654,6 +688,7 @@ document.getElementById('btn-menu').addEventListener('click', (e) => {
 
   // Odjava
   document.getElementById('btn-logout').addEventListener('click', () => {
+    stopPolling();
     document.getElementById('dropdown-menu').classList.add('hidden');
     document.getElementById('pin-screen').style.display = 'flex';
     document.querySelector('header').classList.add('hidden');
