@@ -664,3 +664,17 @@ main {
 .edit-mode .table-edit-btn {
   display: flex;
 }
+
+#btn-finish-edit {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2d6a4f;
+  color: white;
+  font-size: 1rem;
+  padding: 12px 28px;
+  border-radius: 12px;
+  z-index: 10;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}

@@ -393,19 +393,17 @@ function toggleEditMode() {
   editMode = !editMode;
   const btn = document.getElementById('btn-edit-mode');
   const addBtn = document.getElementById('btn-add-table');
+  const finishBtn = document.getElementById('btn-finish-edit');
   const area = document.getElementById('table-area');
 
   if (editMode) {
-    btn.textContent = '✅ Završi uređivanje';
-    btn.style.background = '#2d6a4f';
-    btn.style.color = 'white';
+    btn.textContent = '✏️ Uredi raspored';
     addBtn.classList.remove('hidden');
+    finishBtn.classList.remove('hidden');
     area.classList.add('edit-mode');
   } else {
-    btn.textContent = '✏️ Uredi raspored';
-    btn.style.background = '';
-    btn.style.color = '';
     addBtn.classList.add('hidden');
+    finishBtn.classList.add('hidden');
     area.classList.remove('edit-mode');
   }
 }
@@ -636,6 +634,10 @@ document.getElementById('btn-menu').addEventListener('click', (e) => {
     openChangePinModal();
   });
   document.getElementById('btn-cancel-change-pin').addEventListener('click', () => closeModal('modal-change-pin'));
+
+  document.getElementById('btn-finish-edit').addEventListener('click', () => {
+  toggleEditMode();
+});
 }
 
 // ─── PROMJENA PIN-a ───────────────────────────────────
