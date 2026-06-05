@@ -626,6 +626,8 @@ function closeModal(id) {
 // ─── EVENT LISTENERS ──────────────────────────────────
 
 function setupEventListeners() {
+    if (window._listenersAdded) return;
+  window._listenersAdded = true;
   setupNumpad();
   setupTouchScroll();
 
