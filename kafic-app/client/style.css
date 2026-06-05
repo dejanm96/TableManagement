@@ -300,7 +300,7 @@ main {
 /* ─── IZVJEŠTAJ ───────────────────────────────────────── */
 
 #report-content, #history-content {
-  max-height: 400px;
+  max-height: 50vh;
   overflow-y: auto;
 }
 
