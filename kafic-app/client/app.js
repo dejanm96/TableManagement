@@ -449,12 +449,28 @@ async function openTodayReport() {
     content.innerHTML = '<p style="color:#aaa;text-align:center;padding:20px;">Nema zatvorenih stolova danas.</p>';
   } else {
     content.innerHTML = `
-      ${sessions.map(s => `
-        <div class="report-row">
-        <span>${s.table_name} — ${s.guest_name} <span style="color:#aaa;font-size:0.85rem;">(${s.opened_at ? new Date(s.opened_at + 'Z').toLocaleTimeString('bs', {hour:'2-digit', minute:'2-digit'}) : ''} - ${s.closed_at ? new Date(s.closed_at + 'Z').toLocaleTimeString('bs', {hour:'2-digit', minute:'2-digit'}) : ''})</span></span>
-        <span>${s.total_amount.toFixed(2)} KM</span>
-        </div>
-      `).join('')}
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>Sto</th>
+            <th>Gost</th>
+            <th>Dolazak</th>
+            <th>Konobar</th>
+            <th>Iznos</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sessions.map(s => `
+            <tr>
+              <td>${s.table_name}</td>
+              <td>${s.guest_name}</td>
+              <td>${s.opened_time || '-'}</td>
+              <td>${s.waiter_name || 'Konobar 1'}</td>
+              <td>${s.total_amount.toFixed(2)} KM</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
       <div class="report-total">
         Ukupno: ${todayReport ? todayReport.total_revenue.toFixed(2) : '0.00'} KM
       </div>
@@ -496,22 +512,54 @@ async function downloadPDF(date, total) {
   const sessions = await res.json();
 
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+  const doc = new jsPDF('landscape');
 
-  doc.setFontSize(18);
-  doc.text(`Izvjestaj: ${date}`, 14, 20);
+  doc.setFontSize(16);
+  doc.text(`Izvjestaj: ${date}`, 14, 18);
 
-  doc.setFontSize(11);
-  let y = 35;
+  doc.setFontSize(10);
+  const headers = ['Sto', 'Gost', 'Dolazak', 'Konobar', 'Iznos'];
+  const colWidths = [40, 60, 30, 50, 30];
+  const startX = 14;
+  let y = 30;
 
-  sessions.forEach(s => {
-    doc.text(`${s.table_name} — ${s.guest_name}`, 14, y);
-    doc.text(`${s.total_amount.toFixed(2)} KM`, 170, y, { align: 'right' });
-    y += 8;
+  // Header
+  doc.setFillColor(15, 52, 96);
+  doc.setTextColor(255, 255, 255);
+  doc.rect(startX, y - 6, 262, 10, 'F');
+  let x = startX;
+  headers.forEach((h, i) => {
+    doc.text(h, x + 2, y);
+    x += colWidths[i];
   });
 
-  doc.setFontSize(13);
-  doc.text(`Ukupno: ${total.toFixed(2)} KM`, 170, y + 8, { align: 'right' });
+  // Rows
+  doc.setTextColor(0, 0, 0);
+  sessions.forEach((s, idx) => {
+    y += 10;
+    if (idx % 2 === 0) {
+      doc.setFillColor(240, 240, 240);
+      doc.rect(startX, y - 6, 262, 10, 'F');
+    }
+    x = startX;
+    const row = [
+      s.table_name,
+      s.guest_name,
+      s.opened_time || '-',
+      s.waiter_name || 'Konobar 1',
+      `${s.total_amount.toFixed(2)} KM`
+    ];
+    row.forEach((val, i) => {
+      doc.text(String(val), x + 2, y);
+      x += colWidths[i];
+    });
+  });
+
+  // Ukupno
+  y += 14;
+  doc.setFontSize(12);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Ukupno: ${total.toFixed(2)} KM`, 262, y, { align: 'right' });
 
   doc.save(`izvjestaj-${date}.pdf`);
 }

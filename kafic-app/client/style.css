@@ -678,3 +678,29 @@ main {
   z-index: 10;
   box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
+
+/* ─── REPORT TABELA ──────────────────────────────────── */
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.report-table th {
+  background: #0f3460;
+  color: #eee;
+  padding: 8px 6px;
+  text-align: left;
+  font-size: 0.8rem;
+}
+
+.report-table td {
+  padding: 7px 6px;
+  border-bottom: 1px solid #0f3460;
+  color: #eee;
+}
+
+.report-table tr:nth-child(even) td {
+  background: rgba(255,255,255,0.03);
+}

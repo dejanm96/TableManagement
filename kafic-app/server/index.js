@@ -104,9 +104,9 @@ app.post('/api/tables/:id/session', (req, res) => {
   }
 
   // Kreiraj novu sesiju
-  const result = db.prepare(
-    'INSERT INTO sessions (table_id, guest_name, total_amount) VALUES (?, ?, ?)'
-  ).run(req.params.id, guest_name, amount);
+const result = db.prepare(
+  'INSERT INTO sessions (table_id, guest_name, total_amount, waiter_name) VALUES (?, ?, ?, ?)'
+).run(req.params.id, guest_name, amount, req.body.waiter_name || 'Konobar 1');
 
   db.prepare(
     'INSERT INTO session_items (session_id, amount) VALUES (?, ?)'
@@ -177,10 +177,12 @@ app.get('/api/reports', (req, res) => {
 // Detalji za jedan dan
 app.get('/api/reports/:date', (req, res) => {
   const sessions = db.prepare(`
-    SELECT s.*, t.name as table_name
+    SELECT s.*, t.name as table_name,
+    strftime('%H:%M', datetime(s.opened_at, '+2 hours')) as opened_time,
+    strftime('%H:%M', datetime(s.closed_at, '+2 hours')) as closed_time
     FROM sessions s
     JOIN tables t ON s.table_id = t.id
-    WHERE date(s.closed_at) = ?
+    WHERE date(s.closed_at, '+2 hours') = ?
     ORDER BY s.closed_at DESC
   `).all(req.params.date);
   res.json(sessions);
