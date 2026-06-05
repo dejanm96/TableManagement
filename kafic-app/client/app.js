@@ -80,8 +80,8 @@ function loginSuccess() {
   document.getElementById('pin-screen').style.display = 'none';
   document.querySelector('header').classList.remove('hidden');
   document.querySelector('main').classList.remove('hidden');
-  if (!window._listenersAdded) {
-    window._listenersAdded = true;
+  if (!window._appInitialized) {
+    window._appInitialized = true;
     setupEventListeners();
     startTableTimers();
   }
@@ -628,8 +628,6 @@ function closeModal(id) {
 // ─── EVENT LISTENERS ──────────────────────────────────
 
 function setupEventListeners() {
-    if (window._listenersAdded) return;
-  window._listenersAdded = true;
   setupNumpad();
   setupTouchScroll();
 
@@ -655,9 +653,8 @@ document.getElementById('btn-menu').addEventListener('click', (e) => {
   document.getElementById('btn-fullscreen').addEventListener('click', toggleFullscreen);
 
   // Odjava
-  document.getElementById('btn-logout').addEventListener('click', () => {
+ document.getElementById('btn-logout').addEventListener('click', () => {
     stopPolling();
-    window._listenersAdded = false;
     document.getElementById('dropdown-menu').classList.add('hidden');
     document.getElementById('pin-screen').style.display = 'flex';
     document.querySelector('header').classList.add('hidden');
