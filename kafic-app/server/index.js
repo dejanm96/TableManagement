@@ -12,25 +12,36 @@ app.use(express.static(path.join(__dirname, '../client')));
 
 // ─── STOLOVI ────────────────────────────────────────────
 
+const getOrderItemsForSessionItem = db.prepare(`
+  SELECT oi.drink_id, oi.quantity, d.name, d.price
+  FROM order_items oi JOIN drinks d ON d.id = oi.drink_id
+  WHERE oi.session_item_id = ?
+  ORDER BY d.sort_order
+`);
+
+function withDrinks(items) {
+  return items.map(item => ({ ...item, drinks: getOrderItemsForSessionItem.all(item.id) }));
+}
+
 // Dohvati sve stolove sa aktivnim sesijama
 app.get('/api/tables', (req, res) => {
   const tables = db.prepare('SELECT * FROM tables ORDER BY id').all();
-  
+
   const result = tables.map(table => {
     const session = db.prepare(
       'SELECT * FROM sessions WHERE table_id = ? AND closed_at IS NULL'
     ).get(table.id);
-    
+
     if (session) {
       const items = db.prepare(
         'SELECT * FROM session_items WHERE session_id = ? ORDER BY added_at'
       ).all(session.id);
-      return { ...table, session: { ...session, items } };
+      return { ...table, session: { ...session, items: withDrinks(items) } };
     }
-    
+
     return { ...table, session: null };
   });
-  
+
   res.json(result);
 });
 
@@ -79,7 +90,7 @@ app.get('/api/tables/:id/session', (req, res) => {
     'SELECT * FROM session_items WHERE session_id = ? ORDER BY added_at'
   ).all(session.id);
 
-  res.json({ ...session, items });
+  res.json({ ...session, items: withDrinks(items) });
 });
 
 // Otvori sesiju (unesi ime i prvu sumu, ili listu pića)

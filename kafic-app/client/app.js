@@ -18,6 +18,7 @@ let allDrinks = [];
 let entryMode = 'amount'; // 'amount' | 'drinks'
 let selectedDrinks = {}; // drink_id -> quantity
 let activeDrinkCategory = null;
+let currentSessionItems = [];
 
 async function loadDrinks() {
   const res = await fetch(`${API}/drinks`);
@@ -211,6 +212,17 @@ async function checkPin() {
   }
 }
 
+function isAdmin() {
+  return !!currentWaiter && currentWaiter.id === 0;
+}
+
+function applyRolePermissions() {
+  const adminOnlyIds = ['btn-history', 'btn-price-list', 'btn-edit-mode', 'btn-change-pin', 'btn-manage-waiters'];
+  adminOnlyIds.forEach(id => {
+    document.getElementById(id).classList.toggle('hidden', !isAdmin());
+  });
+}
+
 function loginSuccess() {
   document.getElementById('pin-screen').style.display = 'none';
   document.querySelector('header').classList.remove('hidden');
@@ -220,6 +232,7 @@ function loginSuccess() {
     setupEventListeners();
     startTableTimers();
   }
+  applyRolePermissions();
   loadTables();
   loadDrinks();
   startPolling();
@@ -481,11 +494,22 @@ async function openSessionModal(table, session) {
     document.getElementById('session-opened').textContent = `${h}:${m}`;
     guestInput.style.display = 'none';
     closeBtn.classList.remove('hidden');
+    currentSessionItems = session.items;
     const itemsList = document.getElementById('session-items-list');
     itemsList.innerHTML = session.items.map(item => `
       <div class="session-item" id="item-${item.id}">
-        <span>${item.amount.toFixed(2)} KM</span>
-        <button class="item-delete-btn" onclick="deleteItem(${item.id}, ${session.id})">✕</button>
+        <div class="session-item-info">
+          ${item.drinks.length > 0
+            ? `<span class="session-item-drinks">${item.drinks.map(d => `${d.quantity}× ${d.name}`).join(', ')}</span>`
+            : ''}
+          <span class="session-item-amount">${item.amount.toFixed(2)} KM</span>
+        </div>
+        <div class="session-item-actions">
+          ${item.drinks.length > 0
+            ? `<button class="item-repeat-btn" onclick="repeatRound(${item.id})" title="Ponovi turu">🔁</button>`
+            : ''}
+          <button class="item-delete-btn" onclick="deleteItem(${item.id}, ${session.id})">✕</button>
+        </div>
       </div>
     `).join('');
   } else {
@@ -499,6 +523,16 @@ async function openSessionModal(table, session) {
   }
   document.getElementById('modal-session').classList.remove('hidden');
   switchEntryMode('drinks');
+}
+
+function repeatRound(itemId) {
+  const item = currentSessionItems.find(i => i.id === itemId);
+  if (!item || item.drinks.length === 0) return;
+
+  selectedDrinks = {};
+  item.drinks.forEach(d => { selectedDrinks[d.drink_id] = d.quantity; });
+  switchEntryMode('drinks');
+  document.getElementById('drinks-mode').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 async function deleteItem(itemId, sessionId) {
@@ -838,20 +872,28 @@ async function downloadDrinksPDF(date) {
 
 // ─── CJENOVNIK PIĆA ────────────────────────────────────
 
-async function openPriceList() {
-  await loadDrinks();
+function renderPriceList(filterText) {
   const content = document.getElementById('price-list-content');
+  const needle = filterText.trim().toLowerCase();
   const categories = drinkCategories();
 
-  content.innerHTML = categories.map(cat => `
-    <h3 class="price-list-category">${cat}</h3>
-    ${allDrinks.filter(d => d.category === cat).map(d => `
-      <div class="price-list-row">
-        <span>${d.sort_order}. ${d.name}</span>
-        <input type="number" step="0.10" min="0" class="price-input" data-id="${d.id}" value="${d.price.toFixed(2)}" />
-      </div>
-    `).join('')}
-  `).join('');
+  const html = categories.map(cat => {
+    const drinksInCat = allDrinks
+      .filter(d => d.category === cat)
+      .filter(d => !needle || d.name.toLowerCase().includes(needle));
+    if (drinksInCat.length === 0) return '';
+    return `
+      <h3 class="price-list-category">${cat}</h3>
+      ${drinksInCat.map(d => `
+        <div class="price-list-row">
+          <span>${d.sort_order}. ${d.name}</span>
+          <input type="number" step="0.10" min="0" class="price-input" data-id="${d.id}" value="${d.price.toFixed(2)}" />
+        </div>
+      `).join('')}
+    `;
+  }).join('');
+
+  content.innerHTML = html || '<p style="color:#aaa;text-align:center;padding:20px;">Nema pića za taj pojam.</p>';
 
   content.querySelectorAll('.price-input').forEach(input => {
     input.addEventListener('change', async () => {
@@ -866,7 +908,18 @@ async function openPriceList() {
       await loadDrinks();
     });
   });
+}
 
+async function openPriceList() {
+  await loadDrinks();
+
+  const searchInput = document.getElementById('price-search');
+  searchInput.value = '';
+  const newSearchInput = searchInput.cloneNode(true);
+  searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+  newSearchInput.addEventListener('input', () => renderPriceList(newSearchInput.value));
+
+  renderPriceList('');
   document.getElementById('modal-price-list').classList.remove('hidden');
 }
 

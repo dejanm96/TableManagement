@@ -306,11 +306,8 @@ main {
 #session-info {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  flex: 1;
-  min-height: 0;
+  flex-shrink: 0;
 }
-
 
 #session-info strong {
   color: #f9c74f;
@@ -358,8 +355,54 @@ main {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   padding: 6px 0;
   border-bottom: 1px solid #0f3460;
+}
+
+.session-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.session-item-drinks {
+  font-size: 0.78rem;
+  color: #aaa;
+  overflow-wrap: break-word;
+}
+
+.session-item-amount {
+  font-weight: 700;
+}
+
+.session-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.item-repeat-btn {
+  background: #1a3a6e;
+  color: #f9c74f;
+  border: none;
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.2s;
+}
+
+.item-repeat-btn:hover {
+  background: #e94560;
+  transform: scale(1.1);
 }
 
 .item-delete-btn {
@@ -576,17 +619,7 @@ main {
 
 #session-items-list {
   overflow-y: auto;
-  flex: 1;
-  min-height: 60px;
-}
-
-
-#session-info {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  flex: 1;
-  min-height: 0;
+  max-height: 180px;
 }
 
 .session-total-row {
