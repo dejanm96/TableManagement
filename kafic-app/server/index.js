@@ -110,7 +110,11 @@ app.post('/api/tables/:id/session', (req, res) => {
 
     resolvedItems = items
       .filter(i => drinkMap.has(i.drink_id) && i.quantity > 0)
-      .map(i => ({ ...i, price: drinkMap.get(i.drink_id).price }));
+      .map(i => ({
+        ...i,
+        price: drinkMap.get(i.drink_id).price,
+        servings_per_unit: drinkMap.get(i.drink_id).servings_per_unit
+      }));
 
     amount = resolvedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
   }
@@ -143,7 +147,14 @@ app.post('/api/tables/:id/session', (req, res) => {
     const insertOrderItem = db.prepare(
       'INSERT INTO order_items (session_item_id, drink_id, quantity) VALUES (?, ?, ?)'
     );
-    resolvedItems.forEach(i => insertOrderItem.run(itemResult.lastInsertRowid, i.drink_id, i.quantity));
+    const deductStock = db.prepare(
+      'UPDATE drinks SET current_stock = current_stock - ? WHERE id = ?'
+    );
+    resolvedItems.forEach(i => {
+      insertOrderItem.run(itemResult.lastInsertRowid, i.drink_id, i.quantity);
+      const servingsPerUnit = i.servings_per_unit || 1;
+      deductStock.run(i.quantity / servingsPerUnit, i.drink_id);
+    });
   }
 
   res.json({ ok: true, session_id: sessionId });
@@ -157,12 +168,28 @@ app.delete('/api/session-items/:itemId', (req, res) => {
 
   if (!item) return res.json({ ok: false });
 
+  const orderItemsToRestore = db.prepare(`
+    SELECT oi.drink_id, oi.quantity, d.servings_per_unit
+    FROM order_items oi JOIN drinks d ON d.id = oi.drink_id
+    WHERE oi.session_item_id = ?
+  `).all(req.params.itemId);
+
+  const restoreStock = db.prepare('UPDATE drinks SET current_stock = current_stock + ? WHERE id = ?');
+  orderItemsToRestore.forEach(oi => restoreStock.run(oi.quantity / (oi.servings_per_unit || 1), oi.drink_id));
+
   db.prepare('DELETE FROM order_items WHERE session_item_id = ?').run(req.params.itemId);
   db.prepare('DELETE FROM session_items WHERE id = ?').run(req.params.itemId);
 
   db.prepare(
     'UPDATE sessions SET total_amount = total_amount - ? WHERE id = ?'
   ).run(item.amount, item.session_id);
+
+  // Ako je sto već zatvoren (plaćeno), ispravi i dnevni izvještaj za taj dan
+  const session = db.prepare('SELECT * FROM sessions WHERE id = ?').get(item.session_id);
+  if (session.closed_at) {
+    const date = session.closed_at.split(' ')[0];
+    db.prepare('UPDATE daily_reports SET total_revenue = total_revenue - ? WHERE date = ?').run(item.amount, date);
+  }
 
   res.json({ ok: true });
 });
@@ -242,9 +269,52 @@ app.get('/api/drinks', (req, res) => {
 
 // Izmijeni cijenu pića
 app.patch('/api/drinks/:id', (req, res) => {
-  const { price } = req.body;
-  db.prepare('UPDATE drinks SET price = ? WHERE id = ?').run(price, req.params.id);
+  const { price, servings_per_unit } = req.body;
+  if (price !== undefined) {
+    db.prepare('UPDATE drinks SET price = ? WHERE id = ?').run(price, req.params.id);
+  }
+  if (servings_per_unit !== undefined) {
+    db.prepare('UPDATE drinks SET servings_per_unit = ? WHERE id = ?').run(servings_per_unit, req.params.id);
+  }
   res.json({ ok: true });
+});
+
+// ─── STANJE / ZALIHE ─────────────────────────────────────
+
+// Pregled trenutnog stanja svih pića
+app.get('/api/stock', (req, res) => {
+  const rows = db.prepare('SELECT * FROM drinks ORDER BY sort_order').all();
+  res.json(rows);
+});
+
+// Prijem robe (dodaj na stanje)
+app.post('/api/drinks/:id/restock', (req, res) => {
+  const { quantity } = req.body;
+  if (!quantity || quantity <= 0) return res.json({ ok: false, message: 'Unesi ispravnu količinu' });
+
+  db.prepare('UPDATE drinks SET current_stock = current_stock + ? WHERE id = ?').run(quantity, req.params.id);
+  db.prepare(
+    'INSERT INTO stock_movements (drink_id, type, quantity) VALUES (?, ?, ?)'
+  ).run(req.params.id, 'primljeno', quantity);
+
+  const drink = db.prepare('SELECT * FROM drinks WHERE id = ?').get(req.params.id);
+  res.json({ ok: true, drink });
+});
+
+// Popis (unesi stvarno izbrojano stanje, sistem izračuna razliku)
+app.post('/api/drinks/:id/count', (req, res) => {
+  const { counted } = req.body;
+  if (counted === undefined || counted < 0) return res.json({ ok: false, message: 'Unesi ispravno stanje' });
+
+  const drink = db.prepare('SELECT * FROM drinks WHERE id = ?').get(req.params.id);
+  const diff = counted - drink.current_stock;
+
+  db.prepare('UPDATE drinks SET current_stock = ? WHERE id = ?').run(counted, req.params.id);
+  db.prepare(
+    'INSERT INTO stock_movements (drink_id, type, quantity, note) VALUES (?, ?, ?, ?)'
+  ).run(req.params.id, 'popis', counted, `razlika: ${diff >= 0 ? '+' : ''}${diff.toFixed(2)}`);
+
+  res.json({ ok: true, diff });
 });
 
 // Potrošnja pića za jedan dan (sabrano po piću, po redoslijedu sa spiska šanka)
@@ -283,7 +353,15 @@ app.get('/api/reports/:date', (req, res) => {
     WHERE date(s.closed_at, '+2 hours') = ?
     ORDER BY s.closed_at DESC
   `).all(req.params.date);
-  res.json(sessions);
+
+  const withItems = sessions.map(session => {
+    const items = db.prepare(
+      'SELECT * FROM session_items WHERE session_id = ? ORDER BY added_at'
+    ).all(session.id);
+    return { ...session, items: withDrinks(items) };
+  });
+
+  res.json(withItems);
 });
 
 // Dohvati PIN

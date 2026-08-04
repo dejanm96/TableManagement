@@ -272,10 +272,6 @@ main {
   flex-shrink: 0;
 }
 
-.modal-actions {
-  flex-shrink: 0;
-}
-
 .modal-box h2 {
   color: #e94560;
   font-size: 1.2rem;
@@ -301,6 +297,12 @@ main {
   gap: 10px;
   justify-content: flex-end;
   flex-wrap: wrap;
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  background: #16213e;
+  padding-top: 10px;
+  margin-top: auto;
 }
 
 #session-info {
@@ -758,6 +760,19 @@ main {
   background: rgba(255,255,255,0.03);
 }
 
+.report-row-clickable {
+  cursor: pointer;
+}
+
+.report-row-clickable:hover td {
+  background: rgba(233, 69, 96, 0.12) !important;
+}
+
+.report-row-details td {
+  background: #0f1a33 !important;
+  padding: 8px 10px !important;
+}
+
 /* ─── KONOBARI ───────────────────────────────────────── */
 
 #header-waiter {
@@ -1005,5 +1020,126 @@ main {
 .price-input {
   width: 80px !important;
   padding: 4px 8px !important;
+  text-align: right;
+}
+
+/* ─── STANJE PIĆA ─────────────────────────────────────── */
+
+.stock-hint {
+  color: #aaa;
+  font-size: 0.8rem;
+}
+
+.stock-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #0f3460;
+  font-size: 0.85rem;
+}
+
+.stock-name {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.stock-current {
+  color: #f9c74f;
+  font-weight: 700;
+  min-width: 50px;
+  text-align: right;
+}
+
+.stock-servings-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #aaa;
+  font-size: 0.78rem;
+}
+
+.stock-servings-input {
+  width: 60px !important;
+  padding: 4px 6px !important;
+  text-align: right;
+}
+
+.stock-servings-readonly {
+  color: #aaa;
+  font-weight: 600;
+}
+
+#stock-mode-tabs {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.stock-mode-btn {
+  flex: 1;
+  background: #0f3460;
+  color: #aaa;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.stock-mode-btn.active {
+  background: #e94560;
+  color: white;
+}
+
+.stock-batch-input {
+  width: 90px !important;
+  padding: 5px 8px !important;
+  text-align: right;
+  margin-left: auto;
+}
+
+/* ─── BROJANJE KASE ───────────────────────────────────── */
+
+#cash-count-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.cash-count-row {
+  display: grid;
+  grid-template-columns: 1fr 80px 100px;
+  align-items: center;
+  gap: 8px;
+}
+
+.cash-count-label {
+  font-weight: 600;
+  color: #eee;
+}
+
+.cash-count-input {
+  width: 100% !important;
+  padding: 6px 8px !important;
+  text-align: right;
+}
+
+.cash-count-subtotal {
+  text-align: right;
+  color: #f9c74f;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+#cash-count-total {
+  background: #0f3460;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #f9c74f;
   text-align: right;
 }

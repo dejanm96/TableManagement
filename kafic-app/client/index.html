@@ -49,7 +49,9 @@
         <button id="btn-today-report">📊 Dnevni izvještaj</button>
         <button id="btn-history">📁 Istorija</button>
         <button id="btn-drinks-report">🍹 Export pića</button>
+        <button id="btn-cash-count">💵 Brojanje kase</button>
         <button id="btn-price-list">🧾 Cjenovnik pića</button>
+        <button id="btn-stock">📦 Stanje pića</button>
         <button id="btn-edit-mode">✏️ Uredi raspored</button>
         <button id="btn-change-pin">🔑 Promijeni PIN</button>
         <button id="btn-manage-waiters">👥 Konobari</button>
@@ -161,6 +163,19 @@
     </div>
   </div>
 
+  <!-- MODAL: Brojanje kase -->
+  <div id="modal-cash-count" class="modal hidden">
+    <div class="modal-box">
+      <h2>💵 Brojanje kase</h2>
+      <div id="cash-count-rows"></div>
+      <div id="cash-count-total">0.00 KM</div>
+      <div class="modal-actions">
+        <button id="btn-reset-cash-count" class="btn-secondary">↺ Resetuj</button>
+        <button id="btn-close-cash-count" class="btn-secondary">Zatvori</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: Cjenovnik pića -->
   <div id="modal-price-list" class="modal hidden">
     <div class="modal-box modal-box-wide">
@@ -169,6 +184,24 @@
       <div id="price-list-content"></div>
       <div class="modal-actions">
         <button id="btn-close-price-list" class="btn-secondary">Zatvori</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Stanje pića -->
+  <div id="modal-stock" class="modal hidden">
+    <div class="modal-box modal-box-wide">
+      <h2>📦 Stanje pića</h2>
+      <div id="stock-mode-tabs">
+        <button class="stock-mode-btn active" data-mode="overview">📊 Pregled</button>
+        <button class="stock-mode-btn" data-mode="restock">📥 Prijem robe</button>
+        <button class="stock-mode-btn" data-mode="count">📋 Popis</button>
+      </div>
+      <p id="stock-hint" class="stock-hint"></p>
+      <div id="stock-content"></div>
+      <div class="modal-actions">
+        <button id="btn-confirm-stock-batch" class="btn-primary hidden">✓ Potvrdi</button>
+        <button id="btn-close-stock" class="btn-secondary">Zatvori</button>
       </div>
     </div>
   </div>

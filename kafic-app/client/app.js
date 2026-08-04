@@ -642,19 +642,35 @@ async function confirmAddTable() {
 
 // ─── IZVJEŠTAJ ────────────────────────────────────────
 
+let currentReportDate = null;
+let currentReportSessions = [];
+
 async function openTodayReport() {
-  const today = new Date().toISOString().split('T')[0];
-  const res = await fetch(`${API}/reports/${today}`);
+  currentReportDate = new Date().toISOString().split('T')[0];
+  await renderReport(currentReportDate);
+  document.getElementById('modal-report').classList.remove('hidden');
+}
+
+async function openReportForDate(date) {
+  currentReportDate = date;
+  await renderReport(date);
+  closeModal('modal-history');
+  document.getElementById('modal-report').classList.remove('hidden');
+}
+
+async function renderReport(date) {
+  const res = await fetch(`${API}/reports/${date}`);
   const sessions = await res.json();
+  currentReportSessions = sessions;
 
   const reportRes = await fetch(`${API}/reports`);
   const reports = await reportRes.json();
-  const todayReport = reports.find(r => r.date === today);
+  const dayReport = reports.find(r => r.date === date);
 
   const content = document.getElementById('report-content');
 
   if (sessions.length === 0) {
-    content.innerHTML = '<p style="color:#aaa;text-align:center;padding:20px;">Nema zatvorenih stolova danas.</p>';
+    content.innerHTML = '<p style="color:#aaa;text-align:center;padding:20px;">Nema zatvorenih stolova tog dana.</p>';
   } else {
     content.innerHTML = `
       <table class="report-table">
@@ -669,23 +685,56 @@ async function openTodayReport() {
         </thead>
         <tbody>
           ${sessions.map(s => `
-            <tr>
+            <tr class="report-row-clickable" data-session-id="${s.id}">
               <td>${s.table_name}</td>
               <td>${s.guest_name}</td>
               <td>${s.opened_time || '-'}</td>
               <td>${s.waiter_name || 'Konobar 1'}</td>
               <td>${s.total_amount.toFixed(2)} KM</td>
             </tr>
+            <tr class="report-row-details hidden" id="report-details-${s.id}">
+              <td colspan="5"></td>
+            </tr>
           `).join('')}
         </tbody>
       </table>
       <div class="report-total">
-        Ukupno: ${todayReport ? todayReport.total_revenue.toFixed(2) : '0.00'} KM
+        Ukupno: ${dayReport ? dayReport.total_revenue.toFixed(2) : '0.00'} KM
       </div>
     `;
-  }
 
-  document.getElementById('modal-report').classList.remove('hidden');
+    content.querySelectorAll('.report-row-clickable').forEach(row => {
+      row.addEventListener('click', () => toggleReportSessionDetails(Number(row.dataset.sessionId)));
+    });
+  }
+}
+
+function toggleReportSessionDetails(sessionId) {
+  const detailsRow = document.getElementById(`report-details-${sessionId}`);
+  const wasHidden = detailsRow.classList.contains('hidden');
+
+  document.querySelectorAll('.report-row-details').forEach(r => r.classList.add('hidden'));
+  if (!wasHidden) return;
+
+  const session = currentReportSessions.find(s => s.id === sessionId);
+  detailsRow.querySelector('td').innerHTML = session.items.map(item => `
+    <div class="session-item">
+      <div class="session-item-info">
+        ${item.drinks.length > 0
+          ? `<span class="session-item-drinks">${item.drinks.map(d => `${d.quantity}× ${d.name}`).join(', ')}</span>`
+          : '<span class="session-item-drinks">ručni unos</span>'}
+        <span class="session-item-amount">${item.amount.toFixed(2)} KM</span>
+      </div>
+      <button class="item-delete-btn" onclick="deleteReportItem(${item.id}, ${sessionId})">✕</button>
+    </div>
+  `).join('');
+  detailsRow.classList.remove('hidden');
+}
+
+async function deleteReportItem(itemId, sessionId) {
+  if (!confirm('Obriši ovu stavku? Ovo ispravlja i prihod i stanje pića.')) return;
+  await fetch(`${API}/session-items/${itemId}`, { method: 'DELETE' });
+  await renderReport(currentReportDate);
 }
 
 // ─── ISTORIJA ────────────────────────────────────────
@@ -703,6 +752,7 @@ async function openHistory() {
       <div class="history-item">
         <span>${r.date.split('-').reverse().join('.')}</span>
         <span style="color:#f9c74f;font-weight:700;">${r.total_revenue.toFixed(2)} KM</span>
+        <button class="btn-secondary" onclick="openReportForDate('${r.date}')">👁 Detalji</button>
         <button class="btn-secondary" onclick="downloadPDF('${r.date}', ${r.total_revenue})">
           ⬇️ PDF
         </button>
@@ -797,7 +847,7 @@ async function loadDrinksReport(date) {
           <th>Red.br.</th>
           <th>Vrsta robe</th>
           <th>Jed.cijena</th>
-          <th>Utrošeno</th>
+          <th>Prodato</th>
           <th>Iznos KM</th>
         </tr>
       </thead>
@@ -827,7 +877,7 @@ async function downloadDrinksPDF(date) {
   doc.text(`Potrošnja pića: ${date.split('-').reverse().join('.')}`, 14, 16);
 
   doc.setFontSize(9);
-  const headers = ['Red.br.', 'Vrsta robe', 'Jed.cijena', 'Utrošeno', 'Iznos KM'];
+  const headers = ['Red.br.', 'Vrsta robe', 'Jed.cijena', 'Prodato', 'Iznos KM'];
   const colWidths = [18, 90, 30, 30, 30];
   const startX = 14;
   let y = 26;
@@ -868,6 +918,47 @@ async function downloadDrinksPDF(date) {
   doc.text(`Ukupno: ${total.toFixed(2)} KM`, startX, y);
 
   doc.save(`pica-${date}.pdf`);
+}
+
+// ─── BROJANJE KASE ─────────────────────────────────────
+
+const CASH_DENOMINATIONS = [100, 50, 20, 10, 5, 2, 1, 0.5, 0.2, 0.1];
+
+function openCashCount() {
+  const rows = document.getElementById('cash-count-rows');
+  rows.innerHTML = CASH_DENOMINATIONS.map(val => `
+    <div class="cash-count-row">
+      <span class="cash-count-label">${val.toFixed(2)} KM ×</span>
+      <input type="number" min="0" step="1" class="cash-count-input" data-val="${val}" placeholder="0" />
+      <span class="cash-count-subtotal" data-subtotal-for="${val}">0.00 KM</span>
+    </div>
+  `).join('');
+
+  const inputs = rows.querySelectorAll('.cash-count-input');
+  inputs.forEach(input => {
+    input.addEventListener('input', updateCashCountTotal);
+  });
+  setupSequentialInputNavigation(inputs);
+
+  updateCashCountTotal();
+  document.getElementById('modal-cash-count').classList.remove('hidden');
+}
+
+function updateCashCountTotal() {
+  let total = 0;
+  document.querySelectorAll('.cash-count-input').forEach(input => {
+    const val = parseFloat(input.dataset.val);
+    const qty = parseInt(input.value, 10) || 0;
+    const subtotal = val * qty;
+    total += subtotal;
+    document.querySelector(`[data-subtotal-for="${val}"]`).textContent = `${subtotal.toFixed(2)} KM`;
+  });
+  document.getElementById('cash-count-total').textContent = `${total.toFixed(2)} KM`;
+}
+
+function resetCashCount() {
+  document.querySelectorAll('.cash-count-input').forEach(input => { input.value = ''; });
+  updateCashCountTotal();
 }
 
 // ─── CJENOVNIK PIĆA ────────────────────────────────────
@@ -923,6 +1014,135 @@ async function openPriceList() {
   document.getElementById('modal-price-list').classList.remove('hidden');
 }
 
+// ─── STANJE PIĆA ───────────────────────────────────────
+
+let allStock = [];
+let stockMode = 'overview'; // 'overview' | 'restock' | 'count'
+
+const STOCK_HINTS = {
+  overview: '"Porcija/jed." = koliko čašica/šotova ima jedna jedinica sa stanja (npr. flaša). Za limenke/flašice koje se prodaju cijele ostavi 1.',
+  restock: 'Unesi primljenu količinu (u jedinicama sa stanja, npr. flaša/gajbi). Enter ili strelica dole/gore za sljedeće/prethodno polje. Prazno polje se preskače.',
+  count: 'Unesi stvarno izbrojano stanje. Enter ili strelica dole/gore za sljedeće/prethodno polje. Prazno polje se preskače.'
+};
+
+async function loadStock() {
+  const res = await fetch(`${API}/stock`);
+  allStock = await res.json();
+}
+
+async function openStockScreen() {
+  await loadStock();
+  setStockMode('overview');
+  document.getElementById('modal-stock').classList.remove('hidden');
+}
+
+function setStockMode(mode) {
+  stockMode = mode;
+  document.querySelectorAll('.stock-mode-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+  document.getElementById('stock-hint').textContent = STOCK_HINTS[mode];
+  document.getElementById('btn-confirm-stock-batch').classList.toggle('hidden', mode === 'overview');
+
+  if (mode === 'overview') renderStockOverview();
+  else if (mode === 'restock') renderStockBatchForm('restock');
+  else if (mode === 'count') renderStockBatchForm('count');
+}
+
+function stockByCategory() {
+  const seen = [];
+  allStock.forEach(d => { if (!seen.includes(d.category)) seen.push(d.category); });
+  return seen.map(cat => ({ cat, drinks: allStock.filter(d => d.category === cat) }));
+}
+
+function renderStockOverview() {
+  const content = document.getElementById('stock-content');
+
+  content.innerHTML = stockByCategory().map(({ cat, drinks }) => `
+    <h3 class="price-list-category">${cat}</h3>
+    ${drinks.map(d => `
+      <div class="stock-row" data-id="${d.id}">
+        <span class="stock-name">${d.sort_order}. ${d.name}</span>
+        <span class="stock-current">${d.current_stock.toFixed(2)}</span>
+        <label class="stock-servings-label">Porcija/jed.
+          ${isAdmin()
+            ? `<input type="number" min="0.1" step="0.5" class="stock-servings-input" data-id="${d.id}" value="${d.servings_per_unit.toFixed(2)}" />`
+            : `<span class="stock-servings-readonly">${d.servings_per_unit.toFixed(2)}</span>`}
+        </label>
+      </div>
+    `).join('')}
+  `).join('');
+
+  content.querySelectorAll('.stock-servings-input').forEach(input => {
+    input.addEventListener('change', async () => {
+      const id = input.dataset.id;
+      const servings_per_unit = parseFloat(input.value);
+      if (!servings_per_unit || servings_per_unit <= 0) return;
+      await fetch(`${API}/drinks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ servings_per_unit })
+      });
+      await loadStock();
+    });
+  });
+}
+
+function renderStockBatchForm(mode) {
+  const content = document.getElementById('stock-content');
+
+  content.innerHTML = stockByCategory().map(({ cat, drinks }) => `
+    <h3 class="price-list-category">${cat}</h3>
+    ${drinks.map(d => `
+      <div class="stock-row" data-id="${d.id}">
+        <span class="stock-name">${d.sort_order}. ${d.name}</span>
+        ${mode === 'count' ? `<span class="stock-current">trenutno: ${d.current_stock.toFixed(2)}</span>` : ''}
+        <input type="number" min="0" step="0.5" class="stock-batch-input" data-id="${d.id}" placeholder="${mode === 'count' ? d.current_stock.toFixed(2) : '0'}" />
+      </div>
+    `).join('')}
+  `).join('');
+
+  setupSequentialInputNavigation(content.querySelectorAll('.stock-batch-input'));
+}
+
+async function confirmStockBatch() {
+  const inputs = document.querySelectorAll('.stock-batch-input');
+  const entries = Array.from(inputs)
+    .map(input => ({ id: Number(input.dataset.id), value: parseFloat(input.value) }))
+    .filter(e => !isNaN(e.value) && e.value >= 0);
+
+  if (entries.length === 0) return alert('Nije uneseno nijedno polje.');
+
+  if (stockMode === 'restock') {
+    await Promise.all(entries.filter(e => e.value > 0).map(e =>
+      fetch(`${API}/drinks/${e.id}/restock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity: e.value })
+      })
+    ));
+    alert(`Prijem robe zabilježen za ${entries.filter(e => e.value > 0).length} pića.`);
+  } else if (stockMode === 'count') {
+    const results = await Promise.all(entries.map(e =>
+      fetch(`${API}/drinks/${e.id}/count`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ counted: e.value })
+      }).then(r => r.json()).then(data => ({ ...e, diff: data.diff }))
+    ));
+    const changed = results.filter(r => Math.abs(r.diff) > 0.001).map(r => {
+      const drink = allStock.find(d => d.id === r.id);
+      return `${drink.name}: ${r.diff >= 0 ? '+' : ''}${r.diff.toFixed(2)}`;
+    });
+    alert(changed.length > 0
+      ? `Popis gotov. Razlike:\n${changed.join('\n')}`
+      : 'Popis gotov. Nema razlika sa sistemom.');
+  }
+
+  await loadStock();
+  setStockMode('overview');
+}
+
 // ─── TOUCH SCROLL ─────────────────────────────────────
 
 function setupTouchScroll() {
@@ -958,6 +1178,24 @@ function setupTouchScroll() {
 
 function closeModal(id) {
   document.getElementById(id).classList.add('hidden');
+}
+
+// Enter/strelica dole ide na sljedeće polje, strelica gore na prethodno — za brzi unos niza brojeva
+function setupSequentialInputNavigation(inputs) {
+  const list = Array.from(inputs);
+  list.forEach((input, idx) => {
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        const next = list[idx + 1];
+        if (next) { next.focus(); next.select(); } else { input.blur(); }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prev = list[idx - 1];
+        if (prev) { prev.focus(); prev.select(); }
+      }
+    });
+  });
 }
 
 // ─── EVENT LISTENERS ──────────────────────────────────
@@ -1039,6 +1277,25 @@ document.getElementById('btn-menu').addEventListener('click', (e) => {
     openPriceList();
   });
   document.getElementById('btn-close-price-list').addEventListener('click', () => closeModal('modal-price-list'));
+
+  // Stanje pića
+  document.getElementById('btn-stock').addEventListener('click', () => {
+    document.getElementById('dropdown-menu').classList.add('hidden');
+    openStockScreen();
+  });
+  document.getElementById('btn-close-stock').addEventListener('click', () => closeModal('modal-stock'));
+  document.querySelectorAll('.stock-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => setStockMode(btn.dataset.mode));
+  });
+  document.getElementById('btn-confirm-stock-batch').addEventListener('click', confirmStockBatch);
+
+  // Brojanje kase
+  document.getElementById('btn-cash-count').addEventListener('click', () => {
+    document.getElementById('dropdown-menu').classList.add('hidden');
+    openCashCount();
+  });
+  document.getElementById('btn-reset-cash-count').addEventListener('click', resetCashCount);
+  document.getElementById('btn-close-cash-count').addEventListener('click', () => closeModal('modal-cash-count'));
 
   // Izvještaj
   document.getElementById('btn-today-report').addEventListener('click', () => {

@@ -68,12 +68,32 @@ db.exec(`
     FOREIGN KEY (session_item_id) REFERENCES session_items(id),
     FOREIGN KEY (drink_id) REFERENCES drinks(id)
   );
+
+  CREATE TABLE IF NOT EXISTS stock_movements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    drink_id INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    quantity REAL NOT NULL,
+    note TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (drink_id) REFERENCES drinks(id)
+  );
 `);
 
 // Migracija: waiter_name kolona nedostaje u starijim bazama
 const sessionCols = db.prepare('PRAGMA table_info(sessions)').all().map(c => c.name);
 if (!sessionCols.includes('waiter_name')) {
   db.exec("ALTER TABLE sessions ADD COLUMN waiter_name TEXT DEFAULT 'Konobar 1'");
+}
+
+// Migracija: stanje zaliha (servings_per_unit = koliko porcija/čašica ima jedna jedinica sa stanja,
+// npr. flaša žestokog pića ili vina na čašu; za limenke/flašice koje se prodaju cijele ostaje 1)
+const drinkCols = db.prepare('PRAGMA table_info(drinks)').all().map(c => c.name);
+if (!drinkCols.includes('servings_per_unit')) {
+  db.exec('ALTER TABLE drinks ADD COLUMN servings_per_unit REAL DEFAULT 1');
+}
+if (!drinkCols.includes('current_stock')) {
+  db.exec('ALTER TABLE drinks ADD COLUMN current_stock REAL DEFAULT 0');
 }
 
 // Seed pića (samo jednom, prati redoslijed i cijene sa fizičkog spiska šanka)
