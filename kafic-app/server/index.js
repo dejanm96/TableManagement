@@ -82,37 +82,60 @@ app.get('/api/tables/:id/session', (req, res) => {
   res.json({ ...session, items });
 });
 
-// Otvori sesiju (unesi ime i prvu sumu)
+// Otvori sesiju (unesi ime i prvu sumu, ili listu pića)
 app.post('/api/tables/:id/session', (req, res) => {
-  const { guest_name, amount } = req.body;
+  const { guest_name, items } = req.body;
+  let { amount } = req.body;
+
+  // Ako stižu pića umjesto ručnog iznosa, izračunaj iznos iz cjenovnika
+  let resolvedItems = null;
+  if (items && items.length > 0) {
+    const drinkIds = items.map(i => i.drink_id);
+    const placeholders = drinkIds.map(() => '?').join(',');
+    const drinks = db.prepare(
+      `SELECT * FROM drinks WHERE id IN (${placeholders})`
+    ).all(...drinkIds);
+    const drinkMap = new Map(drinks.map(d => [d.id, d]));
+
+    resolvedItems = items
+      .filter(i => drinkMap.has(i.drink_id) && i.quantity > 0)
+      .map(i => ({ ...i, price: drinkMap.get(i.drink_id).price }));
+
+    amount = resolvedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  }
+
+  if (!amount || amount <= 0) return res.json({ ok: false, message: 'Nema iznosa' });
 
   const existing = db.prepare(
     'SELECT * FROM sessions WHERE table_id = ? AND closed_at IS NULL'
   ).get(req.params.id);
 
-  if (existing) {
-    // Dodaj novu stavku na postojeću sesiju
-    db.prepare(
-      'INSERT INTO session_items (session_id, amount) VALUES (?, ?)'
-    ).run(existing.id, amount);
+  let sessionId;
 
+  if (existing) {
+    sessionId = existing.id;
     db.prepare(
       'UPDATE sessions SET total_amount = total_amount + ? WHERE id = ?'
-    ).run(amount, existing.id);
-
-    return res.json({ ok: true, session_id: existing.id });
+    ).run(amount, sessionId);
+  } else {
+    const result = db.prepare(
+      'INSERT INTO sessions (table_id, guest_name, total_amount, waiter_name) VALUES (?, ?, ?, ?)'
+    ).run(req.params.id, guest_name, amount, req.body.waiter_name || 'Konobar 1');
+    sessionId = result.lastInsertRowid;
   }
 
-  // Kreiraj novu sesiju
-const result = db.prepare(
-  'INSERT INTO sessions (table_id, guest_name, total_amount, waiter_name) VALUES (?, ?, ?, ?)'
-).run(req.params.id, guest_name, amount, req.body.waiter_name || 'Konobar 1');
-
-  db.prepare(
+  const itemResult = db.prepare(
     'INSERT INTO session_items (session_id, amount) VALUES (?, ?)'
-  ).run(result.lastInsertRowid, amount);
+  ).run(sessionId, amount);
 
-  res.json({ ok: true, session_id: result.lastInsertRowid });
+  if (resolvedItems) {
+    const insertOrderItem = db.prepare(
+      'INSERT INTO order_items (session_item_id, drink_id, quantity) VALUES (?, ?, ?)'
+    );
+    resolvedItems.forEach(i => insertOrderItem.run(itemResult.lastInsertRowid, i.drink_id, i.quantity));
+  }
+
+  res.json({ ok: true, session_id: sessionId });
 });
 
 // Obrisi jedan iznos
@@ -123,6 +146,7 @@ app.delete('/api/session-items/:itemId', (req, res) => {
 
   if (!item) return res.json({ ok: false });
 
+  db.prepare('DELETE FROM order_items WHERE session_item_id = ?').run(req.params.itemId);
   db.prepare('DELETE FROM session_items WHERE id = ?').run(req.params.itemId);
 
   db.prepare(
@@ -195,6 +219,36 @@ app.post('/api/waiters', (req, res) => {
 app.delete('/api/waiters/:id', (req, res) => {
   db.prepare('DELETE FROM waiters WHERE id = ?').run(req.params.id);
   res.json({ ok: true });
+});
+
+// ─── PIĆA ────────────────────────────────────────────────
+
+// Cjenovnik (sva pića, po redoslijedu sa spiska šanka)
+app.get('/api/drinks', (req, res) => {
+  const drinks = db.prepare('SELECT * FROM drinks ORDER BY sort_order').all();
+  res.json(drinks);
+});
+
+// Izmijeni cijenu pića
+app.patch('/api/drinks/:id', (req, res) => {
+  const { price } = req.body;
+  db.prepare('UPDATE drinks SET price = ? WHERE id = ?').run(price, req.params.id);
+  res.json({ ok: true });
+});
+
+// Potrošnja pića za jedan dan (sabrano po piću, po redoslijedu sa spiska šanka)
+app.get('/api/reports/:date/drinks', (req, res) => {
+  const rows = db.prepare(`
+    SELECT d.id, d.sort_order, d.name, d.category, d.price,
+      COALESCE(SUM(oi.quantity), 0) as quantity
+    FROM drinks d
+    LEFT JOIN order_items oi
+      ON oi.drink_id = d.id
+      AND date(oi.added_at, '+2 hours') = ?
+    GROUP BY d.id
+    ORDER BY d.sort_order
+  `).all(req.params.date);
+  res.json(rows);
 });
 
 // ─── STATISTIKA ──────────────────────────────────────────

@@ -13,6 +13,112 @@ let editMode = false;
 let activeTableId = null;
 let amountValue = '';
 
+// ─── PIĆA (mod za unos preko cjenovnika) ──────────────
+let allDrinks = [];
+let entryMode = 'amount'; // 'amount' | 'drinks'
+let selectedDrinks = {}; // drink_id -> quantity
+let activeDrinkCategory = null;
+
+async function loadDrinks() {
+  const res = await fetch(`${API}/drinks`);
+  allDrinks = await res.json();
+}
+
+function drinkCategories() {
+  const seen = [];
+  allDrinks.forEach(d => { if (!seen.includes(d.category)) seen.push(d.category); });
+  return seen;
+}
+
+function selectedDrinksTotal() {
+  return Object.entries(selectedDrinks).reduce((sum, [id, qty]) => {
+    const drink = allDrinks.find(d => d.id === Number(id));
+    return sum + (drink ? drink.price * qty : 0);
+  }, 0);
+}
+
+function switchEntryMode(mode) {
+  entryMode = mode;
+  document.getElementById('mode-btn-amount').classList.toggle('active', mode === 'amount');
+  document.getElementById('mode-btn-drinks').classList.toggle('active', mode === 'drinks');
+  document.getElementById('amount-mode').classList.toggle('hidden', mode !== 'amount');
+  document.getElementById('drinks-mode').classList.toggle('hidden', mode !== 'drinks');
+  if (mode === 'drinks') renderDrinksPicker();
+}
+
+function renderDrinksPicker() {
+  const categories = drinkCategories();
+  if (!activeDrinkCategory || !categories.includes(activeDrinkCategory)) {
+    activeDrinkCategory = categories[0];
+  }
+
+  const tabs = document.getElementById('drinks-category-tabs');
+  tabs.innerHTML = categories.map(cat => `
+    <button class="drink-tab-btn ${cat === activeDrinkCategory ? 'active' : ''}" data-cat="${cat}">${cat}</button>
+  `).join('');
+  tabs.querySelectorAll('.drink-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeDrinkCategory = btn.dataset.cat;
+      renderDrinksPicker();
+    });
+  });
+
+  const grid = document.getElementById('drinks-grid');
+  const drinksInCat = allDrinks.filter(d => d.category === activeDrinkCategory);
+  grid.innerHTML = drinksInCat.map(d => {
+    const qty = selectedDrinks[d.id] || 0;
+    return `
+      <button class="drink-btn ${qty > 0 ? 'has-qty' : ''}" data-id="${d.id}">
+        ${qty > 0 ? `<span class="drink-qty-badge">${qty}</span>` : ''}
+        <span class="drink-name">${d.name}</span>
+        <span class="drink-price">${d.price.toFixed(2)} KM</span>
+      </button>
+    `;
+  }).join('');
+  grid.querySelectorAll('.drink-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = Number(btn.dataset.id);
+      selectedDrinks[id] = (selectedDrinks[id] || 0) + 1;
+      renderDrinksPicker();
+    });
+  });
+
+  renderSelectedDrinksSummary();
+}
+
+function renderSelectedDrinksSummary() {
+  const summary = document.getElementById('drinks-selected-summary');
+  const entries = Object.entries(selectedDrinks).filter(([, qty]) => qty > 0);
+
+  if (entries.length === 0) {
+    summary.innerHTML = '<p class="drinks-summary-empty">Nije izabrano nijedno piće.</p>';
+  } else {
+    summary.innerHTML = entries.map(([id, qty]) => {
+      const drink = allDrinks.find(d => d.id === Number(id));
+      if (!drink) return '';
+      return `
+        <div class="drinks-summary-row" data-id="${id}">
+          <span>${drink.name} × ${qty}</span>
+          <span class="drinks-summary-actions">
+            <span>${(drink.price * qty).toFixed(2)} KM</span>
+            <button class="summary-minus-btn" data-id="${id}">−</button>
+          </span>
+        </div>
+      `;
+    }).join('');
+    summary.querySelectorAll('.summary-minus-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = Number(btn.dataset.id);
+        selectedDrinks[id] = Math.max(0, (selectedDrinks[id] || 0) - 1);
+        if (selectedDrinks[id] === 0) delete selectedDrinks[id];
+        renderDrinksPicker();
+      });
+    });
+  }
+
+  document.getElementById('drinks-total-display').textContent = `${selectedDrinksTotal().toFixed(2)} KM`;
+}
+
 // ─── PIN ──────────────────────────────────────────────
 
 let pinValue = '';
@@ -86,6 +192,7 @@ function loginSuccess() {
     startTableTimers();
   }
   loadTables();
+  loadDrinks();
   startPolling();
 }
 // ─── SAT ──────────────────────────────────────────────
@@ -328,6 +435,8 @@ async function openSessionModal(table, session) {
   activeTableId = table.id;
   amountValue = '';
   updateAmountDisplay();
+  selectedDrinks = {};
+  switchEntryMode('amount');
 
   const guestInput = document.getElementById('input-guest');
   const sessionInfo = document.getElementById('session-info');
@@ -375,18 +484,30 @@ async function deleteItem(itemId, sessionId) {
 
 async function addAmount() {
   const guestInput = document.getElementById('input-guest');
-  const guestName = guestInput.style.display === 'none' 
-    ? document.getElementById('session-guest').textContent 
+  const guestName = guestInput.style.display === 'none'
+    ? document.getElementById('session-guest').textContent
     : guestInput.value.trim();
-  const amount = parseFloat(amountValue);
 
   if (!guestName) return alert('Unesi ime gosta!');
-  if (!amount || amount <= 0) return alert('Unesi ispravan iznos!');
+
+  const body = { guest_name: guestName, waiter_name: currentWaiter ? currentWaiter.name : 'Konobar 1' };
+
+  if (entryMode === 'drinks') {
+    const items = Object.entries(selectedDrinks)
+      .filter(([, qty]) => qty > 0)
+      .map(([drink_id, quantity]) => ({ drink_id: Number(drink_id), quantity }));
+    if (items.length === 0) return alert('Izaberi bar jedno piće!');
+    body.items = items;
+  } else {
+    const amount = parseFloat(amountValue);
+    if (!amount || amount <= 0) return alert('Unesi ispravan iznos!');
+    body.amount = amount;
+  }
 
   await fetch(`${API}/tables/${activeTableId}/session`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ guest_name: guestName, amount, waiter_name: currentWaiter ? currentWaiter.name : 'Konobar 1' })
+    body: JSON.stringify(body)
   });
 
   closeModal('modal-session');
@@ -588,6 +709,138 @@ async function downloadPDF(date, total) {
   doc.save(`izvjestaj-${date}.pdf`);
 }
 
+// ─── EXPORT PIĆA ───────────────────────────────────────
+
+function todayDateStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+async function openDrinksReport() {
+  const dateInput = document.getElementById('drinks-report-date');
+  dateInput.value = todayDateStr();
+  await loadDrinksReport(dateInput.value);
+  document.getElementById('modal-drinks-report').classList.remove('hidden');
+}
+
+async function loadDrinksReport(date) {
+  const res = await fetch(`${API}/reports/${date}/drinks`);
+  const rows = await res.json();
+
+  const content = document.getElementById('drinks-report-content');
+  content.innerHTML = `
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Red.br.</th>
+          <th>Vrsta robe</th>
+          <th>Jed.cijena</th>
+          <th>Utrošeno</th>
+          <th>Iznos KM</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `
+          <tr>
+            <td>${r.sort_order}.</td>
+            <td>${r.name}</td>
+            <td>${r.price.toFixed(2)}</td>
+            <td>${r.quantity}</td>
+            <td>${(r.price * r.quantity).toFixed(2)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+async function downloadDrinksPDF(date) {
+  const res = await fetch(`${API}/reports/${date}/drinks`);
+  const rows = await res.json();
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(14);
+  doc.text(`Potrošnja pića: ${date.split('-').reverse().join('.')}`, 14, 16);
+
+  doc.setFontSize(9);
+  const headers = ['Red.br.', 'Vrsta robe', 'Jed.cijena', 'Utrošeno', 'Iznos KM'];
+  const colWidths = [18, 90, 30, 30, 30];
+  const startX = 14;
+  let y = 26;
+
+  doc.setFillColor(15, 52, 96);
+  doc.setTextColor(255, 255, 255);
+  doc.rect(startX, y - 5, 198, 8, 'F');
+  let x = startX;
+  headers.forEach((h, i) => {
+    doc.text(h, x + 2, y);
+    x += colWidths[i];
+  });
+
+  doc.setTextColor(0, 0, 0);
+  let total = 0;
+  rows.forEach((r, idx) => {
+    y += 7;
+    if (y > 280) {
+      doc.addPage();
+      y = 20;
+    }
+    if (idx % 2 === 0) {
+      doc.setFillColor(240, 240, 240);
+      doc.rect(startX, y - 5, 198, 8, 'F');
+    }
+    x = startX;
+    const amount = r.price * r.quantity;
+    total += amount;
+    const row = [`${r.sort_order}.`, r.name, r.price.toFixed(2), String(r.quantity), amount.toFixed(2)];
+    row.forEach((val, i) => {
+      doc.text(String(val), x + 2, y);
+      x += colWidths[i];
+    });
+  });
+
+  y += 12;
+  doc.setFontSize(11);
+  doc.text(`Ukupno: ${total.toFixed(2)} KM`, startX, y);
+
+  doc.save(`pica-${date}.pdf`);
+}
+
+// ─── CJENOVNIK PIĆA ────────────────────────────────────
+
+async function openPriceList() {
+  await loadDrinks();
+  const content = document.getElementById('price-list-content');
+  const categories = drinkCategories();
+
+  content.innerHTML = categories.map(cat => `
+    <h3 class="price-list-category">${cat}</h3>
+    ${allDrinks.filter(d => d.category === cat).map(d => `
+      <div class="price-list-row">
+        <span>${d.sort_order}. ${d.name}</span>
+        <input type="number" step="0.10" min="0" class="price-input" data-id="${d.id}" value="${d.price.toFixed(2)}" />
+      </div>
+    `).join('')}
+  `).join('');
+
+  content.querySelectorAll('.price-input').forEach(input => {
+    input.addEventListener('change', async () => {
+      const id = input.dataset.id;
+      const price = parseFloat(input.value);
+      if (!price || price < 0) return;
+      await fetch(`${API}/drinks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ price })
+      });
+      await loadDrinks();
+    });
+  });
+
+  document.getElementById('modal-price-list').classList.remove('hidden');
+}
+
 // ─── TOUCH SCROLL ─────────────────────────────────────
 
 function setupTouchScroll() {
@@ -680,6 +933,30 @@ document.getElementById('btn-menu').addEventListener('click', (e) => {
   document.getElementById('btn-add-amount').addEventListener('click', addAmount);
   document.getElementById('btn-close-session').addEventListener('click', closeSession);
   document.getElementById('btn-cancel').addEventListener('click', () => closeModal('modal-session'));
+
+  // Mod unosa: iznos ili pića
+  document.getElementById('mode-btn-amount').addEventListener('click', () => switchEntryMode('amount'));
+  document.getElementById('mode-btn-drinks').addEventListener('click', () => switchEntryMode('drinks'));
+
+  // Export pića
+  document.getElementById('btn-drinks-report').addEventListener('click', () => {
+    document.getElementById('dropdown-menu').classList.add('hidden');
+    openDrinksReport();
+  });
+  document.getElementById('btn-close-drinks-report').addEventListener('click', () => closeModal('modal-drinks-report'));
+  document.getElementById('drinks-report-date').addEventListener('change', () => {
+    loadDrinksReport(document.getElementById('drinks-report-date').value);
+  });
+  document.getElementById('btn-export-drinks-pdf').addEventListener('click', () => {
+    downloadDrinksPDF(document.getElementById('drinks-report-date').value);
+  });
+
+  // Cjenovnik pića
+  document.getElementById('btn-price-list').addEventListener('click', () => {
+    document.getElementById('dropdown-menu').classList.add('hidden');
+    openPriceList();
+  });
+  document.getElementById('btn-close-price-list').addEventListener('click', () => closeModal('modal-price-list'));
 
   // Izvještaj
   document.getElementById('btn-today-report').addEventListener('click', () => {
