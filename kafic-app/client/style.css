@@ -46,6 +46,7 @@ button {
   font-size: 0.9rem;
   font-weight: 600;
   transition: all 0.2s;
+  touch-action: manipulation;
 }
 
 button:hover {
