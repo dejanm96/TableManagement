@@ -287,6 +287,22 @@ app.get('/api/stock', (req, res) => {
   res.json(rows);
 });
 
+// Primljena roba za jedan dan (sabrano po piću, po redoslijedu sa spiska šanka)
+app.get('/api/reports/:date/restock', (req, res) => {
+  const rows = db.prepare(`
+    SELECT d.id, d.sort_order, d.name, d.category,
+      COALESCE(SUM(sm.quantity), 0) as quantity
+    FROM drinks d
+    LEFT JOIN stock_movements sm
+      ON sm.drink_id = d.id
+      AND sm.type = 'primljeno'
+      AND date(sm.created_at, '+2 hours') = ?
+    GROUP BY d.id
+    ORDER BY d.sort_order
+  `).all(req.params.date);
+  res.json(rows);
+});
+
 // Prijem robe (dodaj na stanje)
 app.post('/api/drinks/:id/restock', (req, res) => {
   const { quantity } = req.body;

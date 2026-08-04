@@ -961,6 +961,100 @@ function resetCashCount() {
   updateCashCountTotal();
 }
 
+// ─── EXPORT PRIJEMA ROBE ───────────────────────────────
+
+async function openRestockReport() {
+  const dateInput = document.getElementById('restock-report-date');
+  dateInput.value = todayDateStr();
+  await loadRestockReport(dateInput.value);
+  document.getElementById('modal-restock-report').classList.remove('hidden');
+}
+
+async function loadRestockReport(date) {
+  const res = await fetch(`${API}/reports/${date}/restock`);
+  const rows = (await res.json()).filter(r => r.quantity > 0);
+
+  const content = document.getElementById('restock-report-content');
+  content.innerHTML = rows.length === 0
+    ? '<p style="color:#aaa;text-align:center;padding:20px;">Nema primljene robe tog dana.</p>'
+    : `
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Red.br.</th>
+          <th>Vrsta robe</th>
+          <th>Kategorija</th>
+          <th>Primljeno</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `
+          <tr>
+            <td>${r.sort_order}.</td>
+            <td>${r.name}</td>
+            <td>${r.category}</td>
+            <td>${r.quantity}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+async function downloadRestockPDF(date) {
+  const res = await fetch(`${API}/reports/${date}/restock`);
+  const rows = (await res.json()).filter(r => r.quantity > 0);
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(14);
+  doc.text(`Prijem robe: ${date.split('-').reverse().join('.')}`, 14, 16);
+
+  if (rows.length === 0) {
+    doc.setFontSize(11);
+    doc.text('Nema primljene robe tog dana.', 14, 30);
+    doc.save(`prijem-${date}.pdf`);
+    return;
+  }
+
+  doc.setFontSize(9);
+  const headers = ['Red.br.', 'Vrsta robe', 'Kategorija', 'Primljeno'];
+  const colWidths = [18, 90, 60, 30];
+  const startX = 14;
+  let y = 26;
+
+  doc.setFillColor(15, 52, 96);
+  doc.setTextColor(255, 255, 255);
+  doc.rect(startX, y - 5, 198, 8, 'F');
+  let x = startX;
+  headers.forEach((h, i) => {
+    doc.text(h, x + 2, y);
+    x += colWidths[i];
+  });
+
+  doc.setTextColor(0, 0, 0);
+  rows.forEach((r, idx) => {
+    y += 7;
+    if (y > 280) {
+      doc.addPage();
+      y = 20;
+    }
+    if (idx % 2 === 0) {
+      doc.setFillColor(240, 240, 240);
+      doc.rect(startX, y - 5, 198, 8, 'F');
+    }
+    x = startX;
+    const row = [`${r.sort_order}.`, r.name, r.category, String(r.quantity)];
+    row.forEach((val, i) => {
+      doc.text(String(val), x + 2, y);
+      x += colWidths[i];
+    });
+  });
+
+  doc.save(`prijem-${date}.pdf`);
+}
+
 // ─── CJENOVNIK PIĆA ────────────────────────────────────
 
 function renderPriceList(filterText) {
@@ -1269,6 +1363,19 @@ document.getElementById('btn-menu').addEventListener('click', (e) => {
   });
   document.getElementById('btn-export-drinks-pdf').addEventListener('click', () => {
     downloadDrinksPDF(document.getElementById('drinks-report-date').value);
+  });
+
+  // Export prijema robe
+  document.getElementById('btn-restock-report').addEventListener('click', () => {
+    document.getElementById('dropdown-menu').classList.add('hidden');
+    openRestockReport();
+  });
+  document.getElementById('btn-close-restock-report').addEventListener('click', () => closeModal('modal-restock-report'));
+  document.getElementById('restock-report-date').addEventListener('change', () => {
+    loadRestockReport(document.getElementById('restock-report-date').value);
+  });
+  document.getElementById('btn-export-restock-pdf').addEventListener('click', () => {
+    downloadRestockPDF(document.getElementById('restock-report-date').value);
   });
 
   // Cjenovnik pića
