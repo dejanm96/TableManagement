@@ -256,11 +256,15 @@ main {
   flex-direction: column;
   gap: 10px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 #session-form {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 #btn-close-session {
@@ -745,24 +749,43 @@ main {
 
 #entry-mode-toggle {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
   width: 100%;
 }
 
-.mode-btn {
+.mode-btn-primary {
   flex: 1;
   background: #0f3460;
   color: #aaa;
   border: 2px solid transparent;
   border-radius: 10px;
-  padding: 10px;
-  font-size: 0.9rem;
+  padding: 12px;
+  font-size: 1rem;
+  font-weight: 700;
 }
 
-.mode-btn.active {
+.mode-btn-primary.active {
+  background: #e94560;
+  color: white;
+  border-color: #e94560;
+}
+
+.mode-btn-secondary {
+  flex-shrink: 0;
+  background: transparent;
+  color: #aaa;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.mode-btn-secondary.active {
   background: #1a3a6e;
   color: #f9c74f;
-  border-color: #e94560;
+  border-color: #f9c74f;
 }
 
 #amount-mode, #drinks-mode {
@@ -779,7 +802,10 @@ main {
   gap: 6px;
   overflow-x: auto;
   flex-shrink: 0;
+  margin-top: 4px;
+  padding-top: 10px;
   padding-bottom: 4px;
+  border-top: 1px solid #0f3460;
 }
 
 .drink-tab-btn {
@@ -800,10 +826,19 @@ main {
 #drinks-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+  align-content: start;
   gap: 8px;
-  max-height: 32vh;
+  max-height: 40vh;
   overflow-y: auto;
   flex-shrink: 0;
+}
+
+@media (max-height: 750px) {
+  #drinks-grid { max-height: 28vh; }
+}
+
+@media (max-height: 600px) {
+  #drinks-grid { max-height: 20vh; }
 }
 
 .drink-btn {

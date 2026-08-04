@@ -46,6 +46,44 @@ function switchEntryMode(mode) {
   if (mode === 'drinks') renderDrinksPicker();
 }
 
+function drinksGridHTML(category) {
+  const drinksInCat = allDrinks.filter(d => d.category === category);
+  return drinksInCat.map(d => {
+    const qty = selectedDrinks[d.id] || 0;
+    return `
+      <button class="drink-btn ${qty > 0 ? 'has-qty' : ''}" data-id="${d.id}">
+        ${qty > 0 ? `<span class="drink-qty-badge">${qty}</span>` : ''}
+        <span class="drink-name">${d.name}</span>
+        <span class="drink-price">${d.price.toFixed(2)} KM</span>
+      </button>
+    `;
+  }).join('');
+}
+
+function largestDrinkCategory() {
+  const counts = {};
+  allDrinks.forEach(d => { counts[d.category] = (counts[d.category] || 0) + 1; });
+  let maxCat = null, maxCount = -1;
+  Object.entries(counts).forEach(([cat, count]) => {
+    if (count > maxCount) { maxCount = count; maxCat = cat; }
+  });
+  return maxCat;
+}
+
+let drinksGridFixedHeight = null;
+
+function measureDrinksGridHeight(grid) {
+  if (drinksGridFixedHeight !== null) return drinksGridFixedHeight;
+  const currentHTML = grid.innerHTML;
+  const currentInlineHeight = grid.style.height;
+  grid.style.height = 'auto';
+  grid.innerHTML = drinksGridHTML(largestDrinkCategory());
+  drinksGridFixedHeight = grid.scrollHeight;
+  grid.innerHTML = currentHTML;
+  grid.style.height = currentInlineHeight;
+  return drinksGridFixedHeight;
+}
+
 function renderDrinksPicker() {
   const categories = drinkCategories();
   if (!activeDrinkCategory || !categories.includes(activeDrinkCategory)) {
@@ -64,17 +102,8 @@ function renderDrinksPicker() {
   });
 
   const grid = document.getElementById('drinks-grid');
-  const drinksInCat = allDrinks.filter(d => d.category === activeDrinkCategory);
-  grid.innerHTML = drinksInCat.map(d => {
-    const qty = selectedDrinks[d.id] || 0;
-    return `
-      <button class="drink-btn ${qty > 0 ? 'has-qty' : ''}" data-id="${d.id}">
-        ${qty > 0 ? `<span class="drink-qty-badge">${qty}</span>` : ''}
-        <span class="drink-name">${d.name}</span>
-        <span class="drink-price">${d.price.toFixed(2)} KM</span>
-      </button>
-    `;
-  }).join('');
+  grid.innerHTML = drinksGridHTML(activeDrinkCategory);
+  grid.style.height = `${measureDrinksGridHeight(grid)}px`;
   grid.querySelectorAll('.drink-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = Number(btn.dataset.id);
@@ -436,7 +465,6 @@ async function openSessionModal(table, session) {
   amountValue = '';
   updateAmountDisplay();
   selectedDrinks = {};
-  switchEntryMode('amount');
 
   const guestInput = document.getElementById('input-guest');
   const sessionInfo = document.getElementById('session-info');
@@ -470,6 +498,7 @@ async function openSessionModal(table, session) {
     document.getElementById('session-items-list').innerHTML = '';
   }
   document.getElementById('modal-session').classList.remove('hidden');
+  switchEntryMode('drinks');
 }
 
 async function deleteItem(itemId, sessionId) {
